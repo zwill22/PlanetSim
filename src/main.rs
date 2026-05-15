@@ -1,25 +1,24 @@
-mod data;
 mod body;
 mod constants;
+mod data;
+mod settings;
 
 extern crate glutin_window;
 extern crate graphics;
 extern crate opengl_graphics;
 extern crate piston;
 
+use crate::constants::*;
+use crate::data::initialise;
+use crate::settings::Settings;
+use body::Body;
 use glutin_window::GlutinWindow as Window;
-use graphics::color::{BLACK};
-use graphics::{clear};
+use graphics::clear;
+use graphics::color::BLACK;
 use opengl_graphics::{GlGraphics, OpenGL};
 use piston::event_loop::{EventSettings, Events};
 use piston::window::WindowSettings;
 use piston::{RenderArgs, RenderEvent, UpdateArgs, UpdateEvent};
-use body::Body;
-use crate::constants::*;
-
-fn initialise() -> Vec<Body> {
-    data::initialise()
-}
 
 struct App {
     gl: GlGraphics,
@@ -28,9 +27,10 @@ struct App {
 
 impl App {
     fn new(opengl: OpenGL) -> App {
+        let settings = Settings::default();
         App {
             gl: GlGraphics::new(opengl),
-            bodies: initialise(),
+            bodies: initialise(&settings),
         }
     }
 

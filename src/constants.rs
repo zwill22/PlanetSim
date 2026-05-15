@@ -7,10 +7,10 @@ pub(crate) const TITLE: &str = "Solar System";
 pub(crate) const FULLSCREEN: bool = false;
 pub(crate) const SAMPLES: u8 = 0;
 
-pub(crate) const WIDTH: f64 = 4096.0;
+pub(crate) const WIDTH: f64 = 3072.0;
 pub(crate) const HEIGHT: f64 = 2048.0;
 pub(crate) const EXIT_ON_ESCAPE: bool = true;
-pub(crate) const SCALE_FACTOR: f64 = 0.0000001;
+pub(crate) const SCALE_FACTOR: f64 = 0.00000015;
 pub(crate) const MIN_RADIUS: f64 = 4.0;
-pub(crate) const V_FACTOR: f64 = 1.0;
+pub(crate) const V_FACTOR: f64 = 10.0;
 // End Constants
