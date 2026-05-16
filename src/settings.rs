@@ -1,17 +1,15 @@
-use crate::constants::{MIN_RADIUS, SCALE_FACTOR, V_FACTOR};
+use crate::constants::{SCALE_FACTOR, SHOW_ORBITS};
 
 pub(crate) struct Settings {
     pub(crate) scale_factor: f64,
-    pub(crate) min_radius: f64,
-    pub(crate) v_factor: f64,
+    pub(crate) show_orbits: bool,
 }
 
 impl Default for Settings {
     fn default() -> Self {
         Self {
             scale_factor: SCALE_FACTOR,
-            min_radius: MIN_RADIUS,
-            v_factor: V_FACTOR,
+            show_orbits: SHOW_ORBITS,
         }
     }
 }

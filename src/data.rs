@@ -1,6 +1,6 @@
 use crate::body::Body;
 use crate::settings::Settings;
-use graphics::color::{BLUE, CYAN, GRAY, GREEN, RED, WHITE, YELLOW, hex, TEAL};
+use graphics::color::{BLUE, CYAN, GRAY, RED, WHITE, YELLOW, hex, TEAL};
 use polars::prelude::*;
 
 fn colour(name: &str) -> [f32; 4] {

@@ -13,4 +13,6 @@ pub(crate) const EXIT_ON_ESCAPE: bool = true;
 pub(crate) const SCALE_FACTOR: f64 = 0.00000015;
 pub(crate) const MIN_RADIUS: f64 = 4.0;
 pub(crate) const V_FACTOR: f64 = 10.0;
+pub(crate) const ZOOM_FACTOR: f64 = 1.2;
+pub(crate) const SHOW_ORBITS: bool = true;
 // End Constants

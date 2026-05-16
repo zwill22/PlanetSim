@@ -3,6 +3,7 @@ mod constants;
 mod data;
 mod settings;
 
+extern crate approx;
 extern crate glutin_window;
 extern crate graphics;
 extern crate opengl_graphics;
@@ -11,6 +12,7 @@ extern crate piston;
 use crate::constants::*;
 use crate::data::initialise;
 use crate::settings::Settings;
+use approx::abs_diff_ne;
 use body::Body;
 use glutin_window::GlutinWindow as Window;
 use graphics::clear;
@@ -18,11 +20,15 @@ use graphics::color::BLACK;
 use opengl_graphics::{GlGraphics, OpenGL};
 use piston::event_loop::{EventSettings, Events};
 use piston::window::WindowSettings;
-use piston::{RenderArgs, RenderEvent, UpdateArgs, UpdateEvent};
+use piston::{
+    Button, ButtonArgs, ButtonEvent, ButtonState, Key, RenderArgs, RenderEvent, UpdateArgs,
+    UpdateEvent,
+};
 
 struct App {
     gl: GlGraphics,
     bodies: Vec<Body>,
+    settings: Settings,
 }
 
 impl App {
@@ -31,6 +37,7 @@ impl App {
         App {
             gl: GlGraphics::new(opengl),
             bodies: initialise(&settings),
+            settings,
         }
     }
 
@@ -42,13 +49,34 @@ impl App {
             clear(BLACK, g);
 
             for body in &self.bodies {
-                body.render(c, g, x0, y0);
+                body.render(&self.settings, &c, g, x0, y0);
             }
         })
     }
 
     fn update(&mut self, args: &UpdateArgs) {
         self.bodies.iter_mut().for_each(|body| body.update(args));
+    }
+
+    fn control(&mut self, args: &ButtonArgs) {
+        let mut factor = 1.0;
+
+        if args.state == ButtonState::Press {
+            if args.button == Button::Keyboard(Key::LeftBracket) {
+                factor /= ZOOM_FACTOR;
+            }
+            if args.button == Button::Keyboard(Key::RightBracket) {
+                factor *= ZOOM_FACTOR;
+            }
+            if args.button == Button::Keyboard(Key::O) {
+                self.settings.show_orbits = !self.settings.show_orbits;
+            }
+        }
+
+        if abs_diff_ne!(factor, 1.0) {
+            self.settings.scale_factor *= factor;
+            self.bodies.iter_mut().for_each(|body| body.zoom(factor));
+        }
     }
 }
 
@@ -71,6 +99,10 @@ fn main() {
 
         if let Some(args) = e.update_args() {
             app.update(&args);
+        }
+
+        if let Some(args) = e.button_args() {
+            app.control(&args);
         }
     }
 }

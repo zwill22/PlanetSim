@@ -1,6 +1,6 @@
-use crate::constants::SCALE_FACTOR;
+use crate::constants::{MIN_RADIUS, SCALE_FACTOR, V_FACTOR};
 use crate::settings::Settings;
-use graphics::{ellipse, Context, Ellipse, Transformed};
+use graphics::{Context, Ellipse, Transformed, ellipse};
 use opengl_graphics::GlGraphics;
 use piston::UpdateArgs;
 
@@ -26,7 +26,7 @@ impl Body {
         name: &str,
         settings: &Settings,
     ) -> Body {
-        let r0 = (size * settings.scale_factor).max(settings.min_radius);
+        let r0 = size * settings.scale_factor;
 
         let e = (apoapsis - periapsis) / (apoapsis + periapsis);
         let el = settings.scale_factor * periapsis * (1.0 + e) * 10.0_f64.powi(6);
@@ -34,7 +34,7 @@ impl Body {
         let a = el / (1.0 - e.powi(2));
         let b = a * (1.0 - e.powi(2)).sqrt();
 
-        let v = settings.v_factor * velocity;
+        let v = V_FACTOR * velocity;
 
         let position = (periapsis * 10.0_f64.powi(6) * settings.scale_factor, 0.0);
 
@@ -60,8 +60,8 @@ impl Body {
         }
     }
 
-    fn render_body(&self, c: Context, g: &mut GlGraphics, xc: f64, yc: f64) {
-        let circle = ellipse::circle(0.0, 0.0, self.radius);
+    fn render_body(&self, c: &Context, g: &mut GlGraphics, xc: f64, yc: f64) {
+        let circle = ellipse::circle(0.0, 0.0, self.radius.max(MIN_RADIUS));
 
         let transform = c
             .transform
@@ -72,7 +72,7 @@ impl Body {
         ellipse(self.colour, circle, transform, g)
     }
 
-    fn render_orbit(&self, c: Context, g: &mut GlGraphics, xc: f64, yc: f64) {
+    fn render_orbit(&self, c: &Context, g: &mut GlGraphics, xc: f64, yc: f64) {
         let ellipse = Ellipse::new_border(self.colour, 0.5);
 
         let transform = c.transform.trans(xc, yc);
@@ -80,21 +80,44 @@ impl Body {
         ellipse.draw(self.orbit, &c.draw_state, transform, g);
     }
 
-    pub(crate) fn render(&self, c: Context, g: &mut GlGraphics, xc: f64, yc: f64) {
+    pub(crate) fn render(
+        &self,
+        settings: &Settings,
+        c: &Context,
+        g: &mut GlGraphics,
+        xc: f64,
+        yc: f64,
+    ) {
         self.render_body(c, g, xc, yc);
-        self.render_orbit(c, g, xc, yc);
+        if settings.show_orbits {
+            self.render_orbit(c, g, xc, yc);
+        }
     }
 
     pub(crate) fn update(&mut self, args: &UpdateArgs) {
         if self.angular_velocity.abs() < 0.001 || self.name == "Sol" {
             return;
         }
-        self.position.1 += self.angular_velocity * args.dt;
+
+        let theta = self.position.1;
+        let d_theta = self.angular_velocity * args.dt;
+        self.position.1 += d_theta;
 
         let cos_theta = self.position.1.cos();
 
         self.position.0 = self.el / (1.0 + self.eccentricity * cos_theta);
 
-        self.angular_velocity = self.orbital_velocity / self.position.0;
+        let d = 1.0 + self.eccentricity * theta.cos();
+        let factor = 1.0 + self.eccentricity * theta.sin() * d_theta / d;
+
+        self.angular_velocity *= factor;
+    }
+
+    pub(crate) fn zoom(&mut self, factor: f64) {
+        self.el *= factor;
+        self.radius *= factor;
+        self.position.0 *= factor;
+
+        self.orbit = self.orbit.map(|p| p * factor);
     }
 }
