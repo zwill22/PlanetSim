@@ -1,5 +1,4 @@
 mod body;
-mod constants;
 mod data;
 mod settings;
 
@@ -9,7 +8,6 @@ extern crate graphics;
 extern crate opengl_graphics;
 extern crate piston;
 
-use crate::constants::*;
 use crate::data::initialise;
 use crate::settings::Settings;
 use approx::abs_diff_ne;
@@ -24,6 +22,19 @@ use piston::{
     Button, ButtonArgs, ButtonEvent, ButtonState, Key, RenderArgs, RenderEvent, UpdateArgs,
     UpdateEvent,
 };
+
+// ******** Global constants ********
+const OPENGL: OpenGL = OpenGL::V4_5;
+const TITLE: &str = "Solar System";
+const FULLSCREEN: bool = false;
+const SAMPLES: u8 = 0;
+
+const WIDTH: f64 = 3072.0;
+const HEIGHT: f64 = 2048.0;
+const EXIT_ON_ESCAPE: bool = true;
+const ZOOM_FACTOR: f64 = 1.2;
+
+// **********************************
 
 struct App {
     gl: GlGraphics,

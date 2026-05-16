@@ -1,4 +1,3 @@
-use crate::constants::{MIN_RADIUS, SCALE_FACTOR, V_FACTOR};
 use crate::settings::Settings;
 use graphics::{Context, Ellipse, Transformed, ellipse};
 use opengl_graphics::GlGraphics;
@@ -8,7 +7,6 @@ pub struct Body {
     name: String,
     colour: [f32; 4],
     radius: f64,
-    orbital_velocity: f64,
     angular_velocity: f64,
     eccentricity: f64,
     el: f64,
@@ -34,14 +32,14 @@ impl Body {
         let a = el / (1.0 - e.powi(2));
         let b = a * (1.0 - e.powi(2)).sqrt();
 
-        let v = V_FACTOR * velocity;
+        let v = settings.v_factor * velocity;
 
         let position = (periapsis * 10.0_f64.powi(6) * settings.scale_factor, 0.0);
 
         let w = v / position.0;
 
         let orbit = [
-            -apoapsis * SCALE_FACTOR * 10.0_f64.powi(6),
+            -apoapsis * settings.scale_factor * 10.0_f64.powi(6),
             -b,
             2.0 * a,
             2.0 * b,
@@ -51,7 +49,6 @@ impl Body {
             name: name.to_string(),
             colour: col,
             radius: r0,
-            orbital_velocity: v,
             angular_velocity: w,
             eccentricity: e,
             el,
@@ -60,8 +57,8 @@ impl Body {
         }
     }
 
-    fn render_body(&self, c: &Context, g: &mut GlGraphics, xc: f64, yc: f64) {
-        let circle = ellipse::circle(0.0, 0.0, self.radius.max(MIN_RADIUS));
+    fn render_body(&self, settings: &Settings, c: &Context, g: &mut GlGraphics, xc: f64, yc: f64) {
+        let circle = ellipse::circle(0.0, 0.0, self.radius.max(settings.min_radius));
 
         let transform = c
             .transform
@@ -72,7 +69,10 @@ impl Body {
         ellipse(self.colour, circle, transform, g)
     }
 
-    fn render_orbit(&self, c: &Context, g: &mut GlGraphics, xc: f64, yc: f64) {
+    fn render_orbit(&self, settings: &Settings, c: &Context, g: &mut GlGraphics, xc: f64, yc: f64) {
+        if !settings.show_orbits {
+            return;
+        }
         let ellipse = Ellipse::new_border(self.colour, 0.5);
 
         let transform = c.transform.trans(xc, yc);
@@ -88,10 +88,8 @@ impl Body {
         xc: f64,
         yc: f64,
     ) {
-        self.render_body(c, g, xc, yc);
-        if settings.show_orbits {
-            self.render_orbit(c, g, xc, yc);
-        }
+        self.render_body(settings, c, g, xc, yc);
+        self.render_orbit(settings, c, g, xc, yc);
     }
 
     pub(crate) fn update(&mut self, args: &UpdateArgs) {
