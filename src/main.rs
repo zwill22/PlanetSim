@@ -18,8 +18,8 @@ use opengl_graphics::{GlGraphics, OpenGL};
 use piston::event_loop::{EventSettings, Events};
 use piston::window::WindowSettings;
 use piston::{
-    Button, ButtonArgs, ButtonEvent, ButtonState, Key, RenderArgs, RenderEvent, UpdateArgs,
-    UpdateEvent,
+    Button, ButtonArgs, ButtonEvent, ButtonState, Key, MouseCursorEvent, PressEvent, RenderArgs,
+    RenderEvent, UpdateArgs, UpdateEvent,
 };
 
 // ******** Global constants ********
@@ -56,25 +56,29 @@ impl App {
 
         self.gl.draw(args.viewport(), |c, g| {
             clear(BLACK, g);
-            
-            self.bodies.iter().for_each(|body| body.render(&c, g, x0, y0))
+
+            self.bodies
+                .iter()
+                .for_each(|body| body.render(&c, g, x0, y0))
         })
     }
 
     fn update(&mut self, args: &UpdateArgs) {
-        self.bodies.iter_mut().for_each(|body| body.update(&self.settings, args));
+        self.bodies
+            .iter_mut()
+            .for_each(|body| body.update(&self.settings, args));
     }
 
     fn key_control(&mut self, key: &Key) {
         match key {
-            Key::LeftBracket => self.settings.zoom_out(),           // `[` Zoom out
-            Key::RightBracket => self.settings.zoom_in(),           // `]` Zoom in
-            Key::Comma => self.settings.slow_down(),                // `,` Slow down
-            Key::Period => self.settings.speed_up(),                // `.` Speed up
-            Key::Quote => self.settings.decrease_planet_size(),     // `'` Decrease sizes
+            Key::LeftBracket => self.settings.zoom_out(), // `[` Zoom out
+            Key::RightBracket => self.settings.zoom_in(), // `]` Zoom in
+            Key::Comma => self.settings.slow_down(),      // `,` Slow down
+            Key::Period => self.settings.speed_up(),      // `.` Speed up
+            Key::Quote => self.settings.decrease_planet_size(), // `'` Decrease sizes
             Key::Backslash => self.settings.increase_planet_size(), // `\` Increase sizes
-            Key::O => self.settings.toggle_orbits(),                // `o` Toggle orbits
-            _ => {},
+            Key::O => self.settings.toggle_orbits(),      // `o` Toggle orbits
+            _ => {}
         }
     }
 

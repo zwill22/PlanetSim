@@ -71,7 +71,11 @@ impl Settings {
         None
     }
 
-    pub(crate) fn angular_velocity(&self, coordinates: &(f64, f64), orbital_coefficient: f64) -> f64 {
+    pub(crate) fn angular_velocity(
+        &self,
+        coordinates: &(f64, f64),
+        orbital_coefficient: f64,
+    ) -> f64 {
         let r0 = coordinates.0 / self.scale_factor; // Unscaled radius
 
         // \omega = c / r^2
