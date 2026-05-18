@@ -1,6 +1,6 @@
 [package]
 name = "game"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 
 [dependencies]
@@ -8,6 +8,5 @@ piston = "1.0.0"
 piston2d-graphics = "0.45.0"
 pistoncore-glutin_window = "0.73.2"
 piston2d-opengl_graphics = "0.89.0"
-rand = "0.10.1"
-polars = { version = "0.53.0", features = ["lazy", "csv", "rows"]}
-polars-rows-iter = "0.13.2"
+polars = { version = "0.53.0", features = ["lazy", "csv", "rows", "strings", "regex"]}
+approx = "0.5.1"

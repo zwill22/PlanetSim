@@ -1,68 +1,74 @@
 use crate::body::Body;
-use graphics::color::{hex, BLUE, CYAN, GRAY, GREEN, RED, WHITE, YELLOW};
+use crate::settings::Settings;
 use polars::prelude::*;
 
-fn colour(name: &str) -> [f32; 4] {
-    match name {
-        "Mercury" => GRAY,
-        "Venus" => hex("FF8C00"),
-        "Earth" => GREEN,
-        "Mars" => RED,
-        "Jupiter" => hex("FFA500"),
-        "Saturn" => YELLOW,
-        "Uranus" => CYAN,
-        "Neptune" => BLUE,
-        "Pluto" => hex("A52A2A"),
-        "Vulcan" => RED,
-        &_ => WHITE,
-    }
-}
-
-pub(crate) fn initialise() -> Vec<Body> {
-    let mut output = vec![];
-
-    let sun = Body::new(695700.0, 0.0, 0.0, WHITE, 0.0, "Sol");
-    output.push(sun);
-
-    let lf = LazyCsvReader::new(PlRefPath::new("data/planets.csv"))
+fn dynamic_data() -> LazyFrame {
+    let lf = LazyCsvReader::new(PlRefPath::new("data/dynamic.csv"))
         .finish()
         .unwrap();
 
-    let df = lf.select([
-        col("planet"),
-        (col("diameter") / Expr::from(2.0)).alias("radius"),
-        col("perihelion"),
-        col("aphelion"),
-        col("orbital_eccentricity"),
-        col("orbital_velocity").alias("v"),
+    lf.filter(
+        col("fam")
+            .eq(lit("PL-t"))
+            .or(col("fam").eq(lit("PL-j")))
+            .or(col("fam").eq(lit("N/A")))
+            .or(col("fam").eq(lit("A-mb")))
+            .or(col("fam").str().contains_literal(lit("TN-"))),
+    )
+    .select([
+        col("name"),
+        col("fam").alias("family"),
+        col("a_prp(km)").cast(DataType::Float64).alias("a"),
+        col("e_prp").cast(DataType::Float64).alias("e"),
+        col("P (d)").cast(DataType::Float64).alias("period"),
     ])
-    .collect()
-    .unwrap();
+}
 
-    println!("{}", df);
+fn physical_data() -> LazyFrame {
+    let lf = LazyCsvReader::new(PlRefPath::new("data/physical.csv"))
+        .finish()
+        .unwrap();
 
-    let names = df.column("planet").unwrap().str().unwrap();
+    lf.select([
+        col("name"),
+        (col("mean d (km)").cast(DataType::Float64) / Expr::from(2.0)).alias("radius"),
+    ])
+}
+
+fn get_data() -> DataFrame {
+    let dynamic = dynamic_data();
+    let physical = physical_data();
+
+    dynamic
+        .join(physical, [col("name")], [col("name")], JoinArgs::default())
+        .collect()
+        .unwrap()
+}
+
+pub(crate) fn initialise(settings: &Settings) -> Vec<Body> {
+    let df = get_data();
+
+    let mut output = vec![];
+
+    let names = df.column("name").unwrap().str().unwrap();
     let radii = df.column("radius").unwrap().f64().unwrap();
-    let p = df.column("perihelion").unwrap().f64().unwrap();
-    let ap = df.column("aphelion").unwrap().f64().unwrap();
-    let v = df.column("v").unwrap().f64().unwrap();
+    let semi_major_axis = df.column("a").unwrap().f64().unwrap();
+    let eccentricities = df.column("e").unwrap().f64().unwrap();
+    let period = df.column("period").unwrap().f64().unwrap();
 
     for i in 0..names.len() {
-        let name = names.get(i).unwrap();
+        let name = names.get(i);
 
         let radius = radii.get(i).unwrap();
-        let peri = p.get(i).unwrap();
-        let aph = ap.get(i).unwrap();
-        let v0 = v.get(i).unwrap();
+        let a = semi_major_axis.get(i);
+        let e = eccentricities.get(i);
 
-        let col = colour(name);
+        let t = period.get(i);
 
-
-        let body = Body::new(radius, peri, aph, col, v0, name);
+        let body = Body::new(name, radius, a, e, t, settings);
 
         output.push(body);
     }
-
 
     output
 }
