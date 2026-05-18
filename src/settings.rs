@@ -1,7 +1,7 @@
 // ********** Defaults **************
 const SCALE_FACTOR: f64 = 0.00000015;
 const MIN_RADIUS: f64 = 4.0;
-const V_FACTOR: f64 = 10.0;
+const V_FACTOR: f64 = 1000000000.0;
 const SHOW_ORBITS: bool = true;
 const ZOOM_FACTOR: f64 = 1.1;
 // **********************************
@@ -71,7 +71,10 @@ impl Settings {
         None
     }
 
-    pub(crate) fn get_angular_velocity(&self, coordinates: &(f64, f64), v: f64) -> f64 {
-        self.v_factor * v / coordinates.0
+    pub(crate) fn angular_velocity(&self, coordinates: &(f64, f64), orbital_coefficient: f64) -> f64 {
+        let r0 = coordinates.0 / self.scale_factor; // Unscaled radius
+
+        // \omega = c / r^2
+        self.v_factor * orbital_coefficient / (r0 * r0)
     }
 }

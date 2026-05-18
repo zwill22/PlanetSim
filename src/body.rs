@@ -1,15 +1,97 @@
 use crate::settings::Settings;
+use graphics::color::{BLUE, CYAN, GRAY, RED, TEAL, WHITE, YELLOW, hex};
 use graphics::{Context, Ellipse, Transformed, ellipse};
 use opengl_graphics::GlGraphics;
 use piston::UpdateArgs;
 
+fn colour(body: Option<&str>) -> [f32; 4] {
+    let Some(name) = body else { return GRAY };
+    match name {
+        "Sun" => WHITE,
+        "Mercury" => GRAY,
+        "Venus" => hex("FF8C00"),
+        "Earth" => TEAL,
+        "Mars" => RED,
+        "Jupiter" => hex("FFA500"),
+        "Saturn" => YELLOW,
+        "Uranus" => CYAN,
+        "Neptune" => BLUE,
+        "Pluto" => hex("A52A2A"),
+        &_ => GRAY,
+    }
+}
+
+struct OrbitalParameters {
+    a: f64,
+    b: f64,
+    e: f64,
+    el: f64,
+    apoapsis: f64,
+    periapsis: f64,
+    period: f64,
+}
+
+impl OrbitalParameters {
+    fn new(a: f64, e: f64, period: f64) -> OrbitalParameters {
+        let el = a * (1.0 - e.powi(2));
+
+        let apoapsis = el / (1.0 - e);
+        let periapsis = el / (1.0 + e);
+
+        let b = (a * el).sqrt();
+
+        OrbitalParameters {
+            a,
+            b,
+            e,
+            el,
+            apoapsis,
+            periapsis,
+            period,
+        }
+    }
+
+    fn get_orbit(&self) -> [f64; 4] {
+        [
+            -self.apoapsis,
+            -self.b,
+            2.0 * self.a,
+            2.0 * self.b,
+        ]
+    }
+
+    fn get_orbital_coefficient(&self) -> f64 {
+        const SECONDS_PER_MINUTE: f64 = 60.0;
+        const SECONDS_PER_HOUR: f64 = SECONDS_PER_MINUTE * 60.0;
+        const SECONDS_PER_DAY: f64 = SECONDS_PER_HOUR * 24.0;
+        const SECONDS_PER_YEAR: f64 = SECONDS_PER_DAY * 365.25;
+
+        2.0 * std::f64::consts::PI * self.a * self.b / (self.period * SECONDS_PER_YEAR)
+    }
+
+    fn get_r(&self, cos_theta: f64) -> f64 {
+        self.el / (1.0 + self.e * cos_theta)
+    }
+}
+
+fn orbital_parameters(
+    a: Option<f64>,
+    e: Option<f64>,
+    period: Option<f64>,
+) -> Option<OrbitalParameters> {
+    let semi_major_axis = a?;
+    let eccentricity = e?;
+    let t = period?;
+
+    let parameters = OrbitalParameters::new(semi_major_axis, eccentricity, t);
+
+    Some(parameters)
+}
+
 pub(crate) struct Body {
     colour: [f32; 4],
     radius: f64,
-    orbital_velocity: f64,
-    eccentricity: f64,
-    el: f64,
-    orbital_parameters: [f64; 4],
+    orbital_parameters: Option<OrbitalParameters>,
     coordinates: (f64, f64),
     orbit: Option<[f64; 4]>,
     draw_radius: f64,
@@ -17,32 +99,32 @@ pub(crate) struct Body {
 
 impl Body {
     pub(crate) fn new(
+        name: Option<&str>,
         size: f64,
-        periapsis: f64,
-        apoapsis: f64,
-        col: [f32; 4],
-        velocity: f64,
+        a: Option<f64>,
+        e: Option<f64>,
+        period: Option<f64>,
         settings: &Settings,
     ) -> Body {
-        let e = (apoapsis - periapsis) / (apoapsis + periapsis);
-        let semi_latus_rectum = periapsis * (1.0 + e) * 10.0_f64.powi(6);
+        let col = colour(name);
+        let orbit = orbital_parameters(a, e, period);
 
-        let a = semi_latus_rectum / (1.0 - e.powi(2));
-        let b = a * (1.0 - e.powi(2)).sqrt();
+        let initial_coordinates = match &orbit {
+            Some(parameters) => (settings.scale(parameters.periapsis), 0.0),
+            None => (0.0, 0.0),
+        };
 
-        let orbit_parameters = [-apoapsis * 10.0_f64.powi(6), -b, 2.0 * a, 2.0 * b];
+        let initial_orbit = match &orbit {
+            Some(parameters) => settings.get_orbit(&parameters.get_orbit()),
+            None => None,
+        };
 
-        let initial_coordinates = (settings.scale(periapsis), 0.0);
-        let initial_orbit = settings.get_orbit(&orbit_parameters);
         let initial_radius = settings.get_radius(size);
 
         Body {
             colour: col,
             radius: size,
-            orbital_velocity: velocity,
-            eccentricity: e,
-            el: semi_latus_rectum,
-            orbital_parameters: orbit_parameters,
+            orbital_parameters: orbit,
             coordinates: initial_coordinates,
             orbit: initial_orbit,
             draw_radius: initial_radius,
@@ -78,17 +160,39 @@ impl Body {
         self.render_orbit(c, g, xc, yc);
     }
 
+    fn r(&self, settings: &Settings) -> f64 {
+        let cos_theta = self.coordinates.1.cos();
+        let r0 = self.orbital_parameters.as_ref().unwrap().get_r(cos_theta);
+
+        settings.scale(r0)
+    }
+
+    fn angular_velocity(&self, settings: &Settings) -> f64 {
+        let c = self
+            .orbital_parameters
+            .as_ref()
+            .unwrap()
+            .get_orbital_coefficient();
+
+        settings.angular_velocity(&self.coordinates, c)
+    }
+
+    fn orbit(&self, settings: &Settings) -> Option<[f64; 4]> {
+        let orbit = self.orbital_parameters.as_ref()?.get_orbit();
+
+        settings.get_orbit(&orbit)
+    }
+
     pub(crate) fn update(&mut self, settings: &Settings, args: &UpdateArgs) {
         self.draw_radius = settings.get_radius(self.radius);
 
-        let w = settings.get_angular_velocity(&self.coordinates, self.orbital_velocity);
+        if self.orbital_parameters.is_none() {
+            return;
+        };
 
-        self.coordinates.1 += w * args.dt;
+        self.coordinates.1 += self.angular_velocity(settings) * args.dt;
+        self.coordinates.0 = self.r(settings);
 
-        let cos_theta = self.coordinates.1.cos();
-
-        self.coordinates.0 = settings.scale(self.el / (1.0 + self.eccentricity * cos_theta));
-
-        self.orbit = settings.get_orbit(&self.orbital_parameters);
+        self.orbit = self.orbit(settings);
     }
 }
