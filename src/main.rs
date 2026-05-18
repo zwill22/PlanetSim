@@ -10,7 +10,6 @@ extern crate piston;
 
 use crate::data::initialise;
 use crate::settings::Settings;
-use approx::abs_diff_ne;
 use body::Body;
 use glutin_window::GlutinWindow as Window;
 use graphics::clear;
@@ -32,7 +31,6 @@ const SAMPLES: u8 = 0;
 const WIDTH: f64 = 3072.0;
 const HEIGHT: f64 = 2048.0;
 const EXIT_ON_ESCAPE: bool = true;
-const ZOOM_FACTOR: f64 = 1.2;
 
 // **********************************
 
@@ -58,35 +56,36 @@ impl App {
 
         self.gl.draw(args.viewport(), |c, g| {
             clear(BLACK, g);
-
-            for body in &self.bodies {
-                body.render(&self.settings, &c, g, x0, y0);
-            }
+            
+            self.bodies.iter().for_each(|body| body.render(&c, g, x0, y0))
         })
     }
 
     fn update(&mut self, args: &UpdateArgs) {
-        self.bodies.iter_mut().for_each(|body| body.update(args));
+        self.bodies.iter_mut().for_each(|body| body.update(&self.settings, args));
+    }
+
+    fn key_control(&mut self, key: &Key) {
+        match key {
+            Key::LeftBracket => self.settings.zoom_out(),           // `[` Zoom out
+            Key::RightBracket => self.settings.zoom_in(),           // `]` Zoom in
+            Key::Comma => self.settings.slow_down(),                // `,` Slow down
+            Key::Period => self.settings.speed_up(),                // `.` Speed up
+            Key::Quote => self.settings.decrease_planet_size(),     // `'` Decrease sizes
+            Key::Backslash => self.settings.increase_planet_size(), // `\` Increase sizes
+            Key::O => self.settings.toggle_orbits(),                // `o` Toggle orbits
+            _ => {},
+        }
     }
 
     fn control(&mut self, args: &ButtonArgs) {
-        let mut factor = 1.0;
-
         if args.state == ButtonState::Press {
-            if args.button == Button::Keyboard(Key::LeftBracket) {
-                factor /= ZOOM_FACTOR;
+            match args.button {
+                Button::Keyboard(key) => self.key_control(&key),
+                Button::Mouse(_) => {}
+                Button::Controller(_) => {}
+                Button::Hat(_) => {}
             }
-            if args.button == Button::Keyboard(Key::RightBracket) {
-                factor *= ZOOM_FACTOR;
-            }
-            if args.button == Button::Keyboard(Key::O) {
-                self.settings.show_orbits = !self.settings.show_orbits;
-            }
-        }
-
-        if abs_diff_ne!(factor, 1.0) {
-            self.settings.scale_factor *= factor;
-            self.bodies.iter_mut().for_each(|body| body.zoom(factor));
         }
     }
 }

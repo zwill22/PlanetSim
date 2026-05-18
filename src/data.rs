@@ -21,7 +21,7 @@ fn colour(name: &str) -> [f32; 4] {
 pub(crate) fn initialise(settings: &Settings) -> Vec<Body> {
     let mut output = vec![];
 
-    let sun = Body::new(695700.0, 0.0, 0.0, WHITE, 0.0, "Sol", settings);
+    let sun = Body::new(695700.0, 0.07, 0.08, WHITE, 0.013, settings);
     output.push(sun);
 
     let lf = LazyCsvReader::new(PlRefPath::new("data/planets.csv"))
@@ -55,7 +55,7 @@ pub(crate) fn initialise(settings: &Settings) -> Vec<Body> {
 
         let col = colour(name);
 
-        let body = Body::new(radius, peri, aph, col, v0, name, settings);
+        let body = Body::new(radius, peri, aph, col, v0, settings);
 
         output.push(body);
     }
