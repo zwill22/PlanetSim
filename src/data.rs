@@ -12,7 +12,8 @@ fn dynamic_data() -> LazyFrame {
             .eq(lit("PL-t"))
             .or(col("fam").eq(lit("PL-j")))
             .or(col("fam").eq(lit("N/A")))
-            .or(col("fam").eq(lit("A-mb"))),
+            .or(col("fam").eq(lit("A-mb")))
+            .or(col("fam").str().contains_literal(lit("TN-")))
     )
     .select([
         col("name"),

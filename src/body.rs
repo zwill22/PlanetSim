@@ -12,11 +12,13 @@ fn colour(body: Option<&str>) -> [f32; 4] {
         "Venus" => hex("FF8C00"),
         "Earth" => TEAL,
         "Mars" => RED,
+        "Ceres" => GRAY,
         "Jupiter" => hex("FFA500"),
         "Saturn" => YELLOW,
         "Uranus" => CYAN,
         "Neptune" => BLUE,
         "Pluto" => hex("A52A2A"),
+        "Eris" => GRAY,
         &_ => GRAY,
     }
 }
@@ -52,12 +54,7 @@ impl OrbitalParameters {
     }
 
     fn get_orbit(&self) -> [f64; 4] {
-        [
-            -self.apoapsis,
-            -self.b,
-            2.0 * self.a,
-            2.0 * self.b,
-        ]
+        [-self.apoapsis, -self.b, 2.0 * self.a, 2.0 * self.b]
     }
 
     fn get_orbital_coefficient(&self) -> f64 {
