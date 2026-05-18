@@ -31,10 +31,11 @@ struct OrbitalParameters {
     apoapsis: f64,
     periapsis: f64,
     period: f64,
+    prograde: bool,
 }
 
 impl OrbitalParameters {
-    fn new(a: f64, e: f64, period: f64) -> OrbitalParameters {
+    fn new(a: f64, e: f64, period: f64, prograde: bool) -> OrbitalParameters {
         let el = a * (1.0 - e.powi(2));
 
         let apoapsis = el / (1.0 - e);
@@ -50,6 +51,7 @@ impl OrbitalParameters {
             apoapsis,
             periapsis,
             period,
+            prograde,
         }
     }
 
@@ -63,7 +65,9 @@ impl OrbitalParameters {
         const SECONDS_PER_DAY: f64 = SECONDS_PER_HOUR * 24.0;
         const SECONDS_PER_YEAR: f64 = SECONDS_PER_DAY * 365.25;
 
-        2.0 * std::f64::consts::PI * self.a * self.b / (self.period * SECONDS_PER_YEAR)
+        let sign = if self.prograde { -1.0 } else { 1.0 };
+
+        2.0 * std::f64::consts::PI * sign * self.a * self.b / (self.period * SECONDS_PER_YEAR)
     }
 
     fn get_r(&self, cos_theta: f64) -> f64 {
@@ -75,12 +79,13 @@ fn orbital_parameters(
     a: Option<f64>,
     e: Option<f64>,
     period: Option<f64>,
+    prograde: bool,
 ) -> Option<OrbitalParameters> {
     let semi_major_axis = a?;
     let eccentricity = e?;
     let t = period?;
 
-    let parameters = OrbitalParameters::new(semi_major_axis, eccentricity, t);
+    let parameters = OrbitalParameters::new(semi_major_axis, eccentricity, t, prograde);
 
     Some(parameters)
 }
@@ -100,11 +105,12 @@ impl Body {
         size: f64,
         a: Option<f64>,
         e: Option<f64>,
+        prograde: bool,
         period: Option<f64>,
         settings: &Settings,
     ) -> Body {
         let col = colour(name);
-        let orbit = orbital_parameters(a, e, period);
+        let orbit = orbital_parameters(a, e, period, prograde);
 
         let initial_coordinates = match &orbit {
             Some(parameters) => (settings.scale(parameters.periapsis), 0.0),

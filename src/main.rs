@@ -18,8 +18,8 @@ use opengl_graphics::{GlGraphics, OpenGL};
 use piston::event_loop::{EventSettings, Events};
 use piston::window::WindowSettings;
 use piston::{
-    Button, ButtonArgs, ButtonEvent, ButtonState, Key, MouseCursorEvent, PressEvent, RenderArgs,
-    RenderEvent, UpdateArgs, UpdateEvent,
+    Button, ButtonArgs, ButtonEvent, ButtonState, Key, RenderArgs, RenderEvent, UpdateArgs,
+    UpdateEvent,
 };
 
 // ******** Global constants ********
