@@ -14,13 +14,14 @@ use body::Body;
 use glutin_window::GlutinWindow;
 use graphics::clear;
 use graphics::color::BLACK;
-use opengl_graphics::{GlGraphics, OpenGL};
+use opengl_graphics::{GlGraphics, GlyphCache, OpenGL, TextureSettings};
 use piston::event_loop::{EventSettings, Events};
 use piston::window::WindowSettings;
 use piston::{
-    Button, ButtonArgs, ButtonEvent, ButtonState, Key, RenderArgs, RenderEvent, UpdateArgs,
-    UpdateEvent,
+    Button, ButtonArgs, ButtonEvent, ButtonState, Key, MouseScrollEvent, RenderArgs, RenderEvent,
+    UpdateArgs, UpdateEvent,
 };
+use rusttype::Font;
 
 // ******** Global constants ********
 const OPENGL: OpenGL = OpenGL::V4_5;
@@ -34,19 +35,30 @@ const EXIT_ON_ESCAPE: bool = true;
 
 // **********************************
 
-struct App {
+fn setup_glyphs<'a>() -> GlyphCache<'a> {
+    let font_data: &[u8] = include_bytes!("../data/Michroma-Regular.ttf");
+
+    let font: Font<'static> = Font::try_from_bytes(font_data).unwrap();
+    GlyphCache::from_font(font, (), TextureSettings::new())
+}
+
+struct App<'a> {
     gl: GlGraphics,
     bodies: Vec<Body>,
     settings: Settings,
+    glyphs: GlyphCache<'a>,
 }
 
-impl App {
-    fn new(opengl: OpenGL) -> App {
+impl App<'_> {
+
+    fn new<'a>(opengl: OpenGL) -> App<'a> {
         let settings = Settings::default();
+        let glyphs = setup_glyphs();
         App {
             gl: GlGraphics::new(opengl),
             bodies: initialise(&settings),
             settings,
+            glyphs,
         }
     }
 
@@ -56,6 +68,8 @@ impl App {
 
         self.gl.draw(args.viewport(), |c, g| {
             clear(BLACK, g);
+
+            self.settings.render(&c, g, &mut self.glyphs);
 
             self.bodies
                 .iter()

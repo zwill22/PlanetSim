@@ -1,3 +1,8 @@
+use graphics::color::WHITE;
+use graphics::{Context, Text, Transformed};
+use opengl_graphics::{GlGraphics, GlyphCache};
+
+
 // ********** Defaults **************
 const SCALE_FACTOR: f64 = 0.00000015;
 const MIN_RADIUS: f64 = 2.0;
@@ -98,5 +103,42 @@ impl Settings {
 
         // \omega = c / r^2
         self.v_factor * orbital_coefficient / (r0 * r0)
+    }
+
+    pub(crate) fn render(&mut self, c: &Context, g: &mut GlGraphics, glyphs: &mut GlyphCache) {
+        let font_size = 24;
+        let text = Text::new_color(WHITE, font_size).round();
+
+        let orbits = if self.show_orbits {
+            "Orbits:              ON"
+        } else {
+            "Orbits:             OFF"
+        };
+
+        let strings = vec![
+            "Solar System View".to_string(),
+            format!(
+                "Zoom:  {:>12}",
+                format!("x{:.2}", (self.scale_factor / SCALE_FACTOR).clamp(MIN_SCALE, MAX_SCALE))
+            ),
+            format!(
+                "Speed: {:>12}",
+                format!("x{:.2}", (self.v_factor / V_FACTOR).clamp(MIN_SPEED, MAX_SPEED))
+            ),
+            format!(
+                "Sizes:     {:>12.2}",
+                self.min_radius.clamp(MIN_DRAW_RADIUS, MAX_DRAW_RADIUS)
+            ),
+            orbits.to_string(),
+        ];
+
+        let mut height = font_size as f64 * 1.5;
+
+        for string in strings {
+            let transform = c.transform.trans(font_size as f64, height);
+            text.draw(&string, glyphs, &c.draw_state, transform, g)
+                .expect("Error drawing text");
+            height += font_size as f64 * 1.5;
+        }
     }
 }
