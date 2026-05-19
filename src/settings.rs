@@ -1,9 +1,15 @@
 // ********** Defaults **************
 const SCALE_FACTOR: f64 = 0.00000015;
-const MIN_RADIUS: f64 = 4.0;
+const MIN_RADIUS: f64 = 2.0;
 const V_FACTOR: f64 = 1000000000.0;
 const SHOW_ORBITS: bool = true;
 const ZOOM_FACTOR: f64 = 1.1;
+const MIN_SCALE: f64 = 0.1;
+const MAX_SCALE: f64 = 2000.0;
+const MIN_SPEED: f64 = 0.1;
+const MAX_SPEED: f64 = 2000.0;
+const MIN_DRAW_RADIUS: f64 = 1.0;
+const MAX_DRAW_RADIUS: f64 = 5.0;
 // **********************************
 
 pub(crate) struct Settings {
@@ -32,26 +38,38 @@ impl Settings {
     }
 
     pub(crate) fn zoom_out(&mut self) {
-        self.scale_factor /= ZOOM_FACTOR;
+        if self.scale_factor > SCALE_FACTOR * MIN_SCALE {
+            self.scale_factor /= ZOOM_FACTOR;
+        }
     }
     pub(crate) fn zoom_in(&mut self) {
-        self.scale_factor *= ZOOM_FACTOR;
+        if self.scale_factor < SCALE_FACTOR * MAX_SCALE {
+            self.scale_factor *= ZOOM_FACTOR;
+        }
     }
 
     pub(crate) fn slow_down(&mut self) {
-        self.v_factor /= ZOOM_FACTOR;
+        if self.v_factor > V_FACTOR * MIN_SPEED {
+            self.v_factor /= ZOOM_FACTOR;
+        }
     }
 
     pub(crate) fn speed_up(&mut self) {
-        self.v_factor *= ZOOM_FACTOR;
+        if self.v_factor < V_FACTOR * MAX_SPEED {
+            self.v_factor *= ZOOM_FACTOR;
+        }
     }
 
     pub(crate) fn decrease_planet_size(&mut self) {
-        self.min_radius /= ZOOM_FACTOR;
+        if self.min_radius > MIN_DRAW_RADIUS {
+            self.min_radius /= ZOOM_FACTOR;
+        }
     }
 
     pub(crate) fn increase_planet_size(&mut self) {
-        self.min_radius *= ZOOM_FACTOR;
+        if self.min_radius < MAX_DRAW_RADIUS {
+            self.min_radius *= ZOOM_FACTOR;
+        }
     }
 
     pub(crate) fn toggle_orbits(&mut self) {
