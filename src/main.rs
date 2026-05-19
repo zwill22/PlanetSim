@@ -11,7 +11,7 @@ extern crate piston;
 use crate::data::initialise;
 use crate::settings::Settings;
 use body::Body;
-use glutin_window::GlutinWindow as Window;
+use glutin_window::GlutinWindow;
 use graphics::clear;
 use graphics::color::BLACK;
 use opengl_graphics::{GlGraphics, OpenGL};
@@ -92,10 +92,23 @@ impl App {
             }
         }
     }
+
+    fn scroll(&mut self, args: &[f64; 2]) {
+        let _horizontal_scroll = args[0] / WIDTH;
+        let vertical_scroll = args[1] / HEIGHT;
+
+        if vertical_scroll > 0.0 {
+            self.settings.zoom_out();
+        }
+
+        if vertical_scroll < 0.0 {
+            self.settings.zoom_in();
+        }
+    }
 }
 
 fn main() {
-    let mut window: Window = WindowSettings::new(TITLE, [WIDTH, HEIGHT])
+    let mut window: GlutinWindow = WindowSettings::new(TITLE, [WIDTH, HEIGHT])
         .graphics_api(OPENGL)
         .exit_on_esc(EXIT_ON_ESCAPE)
         .fullscreen(FULLSCREEN)
@@ -117,6 +130,10 @@ fn main() {
 
         if let Some(args) = e.button_args() {
             app.control(&args);
+        }
+
+        if let Some(args) = e.mouse_scroll_args() {
+            app.scroll(&args);
         }
     }
 }
