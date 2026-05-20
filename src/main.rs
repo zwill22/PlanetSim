@@ -11,16 +11,16 @@ extern crate piston;
 use crate::data::initialise;
 use crate::settings::Settings;
 use body::Body;
-use glutin_window::GlutinWindow as Window;
+use glutin_window::GlutinWindow;
 use graphics::clear;
 use graphics::color::BLACK;
-use opengl_graphics::{GlGraphics, OpenGL};
+use opengl_graphics::{GlGraphics, GlyphCache, OpenGL, TextureSettings};
 use piston::event_loop::{EventSettings, Events};
 use piston::window::WindowSettings;
 use piston::{
-    Button, ButtonArgs, ButtonEvent, ButtonState, Key, MouseCursorEvent, PressEvent, RenderArgs,
-    RenderEvent, UpdateArgs, UpdateEvent,
+    ButtonArgs, ButtonEvent, MouseScrollEvent, RenderArgs, RenderEvent, UpdateArgs, UpdateEvent,
 };
+use rusttype::Font;
 
 // ******** Global constants ********
 const OPENGL: OpenGL = OpenGL::V4_5;
@@ -34,19 +34,29 @@ const EXIT_ON_ESCAPE: bool = true;
 
 // **********************************
 
-struct App {
+fn setup_glyphs<'a>() -> GlyphCache<'a> {
+    let font_data: &[u8] = include_bytes!("../data/Michroma-Regular.ttf");
+
+    let font: Font<'static> = Font::try_from_bytes(font_data).unwrap();
+    GlyphCache::from_font(font, (), TextureSettings::new())
+}
+
+struct App<'a> {
     gl: GlGraphics,
     bodies: Vec<Body>,
     settings: Settings,
+    glyphs: GlyphCache<'a>,
 }
 
-impl App {
-    fn new(opengl: OpenGL) -> App {
+impl App<'_> {
+    fn new<'a>(opengl: OpenGL) -> App<'a> {
         let settings = Settings::default();
+        let glyphs = setup_glyphs();
         App {
             gl: GlGraphics::new(opengl),
             bodies: initialise(&settings),
             settings,
+            glyphs,
         }
     }
 
@@ -56,6 +66,8 @@ impl App {
 
         self.gl.draw(args.viewport(), |c, g| {
             clear(BLACK, g);
+
+            self.settings.render(&c, g, &mut self.glyphs);
 
             self.bodies
                 .iter()
@@ -69,33 +81,17 @@ impl App {
             .for_each(|body| body.update(&self.settings, args));
     }
 
-    fn key_control(&mut self, key: &Key) {
-        match key {
-            Key::LeftBracket => self.settings.zoom_out(), // `[` Zoom out
-            Key::RightBracket => self.settings.zoom_in(), // `]` Zoom in
-            Key::Comma => self.settings.slow_down(),      // `,` Slow down
-            Key::Period => self.settings.speed_up(),      // `.` Speed up
-            Key::Quote => self.settings.decrease_planet_size(), // `'` Decrease sizes
-            Key::Backslash => self.settings.increase_planet_size(), // `\` Increase sizes
-            Key::O => self.settings.toggle_orbits(),      // `o` Toggle orbits
-            _ => {}
-        }
+    fn control(&mut self, args: &ButtonArgs) {
+        self.settings.control(args)
     }
 
-    fn control(&mut self, args: &ButtonArgs) {
-        if args.state == ButtonState::Press {
-            match args.button {
-                Button::Keyboard(key) => self.key_control(&key),
-                Button::Mouse(_) => {}
-                Button::Controller(_) => {}
-                Button::Hat(_) => {}
-            }
-        }
+    fn scroll(&mut self, args: &[f64; 2]) {
+        self.settings.scroll(args);
     }
 }
 
 fn main() {
-    let mut window: Window = WindowSettings::new(TITLE, [WIDTH, HEIGHT])
+    let mut window: GlutinWindow = WindowSettings::new(TITLE, [WIDTH, HEIGHT])
         .graphics_api(OPENGL)
         .exit_on_esc(EXIT_ON_ESCAPE)
         .fullscreen(FULLSCREEN)
@@ -117,6 +113,10 @@ fn main() {
 
         if let Some(args) = e.button_args() {
             app.control(&args);
+        }
+
+        if let Some(args) = e.mouse_scroll_args() {
+            app.scroll(&args);
         }
     }
 }
