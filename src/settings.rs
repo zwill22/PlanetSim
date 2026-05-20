@@ -1,7 +1,7 @@
 use graphics::color::WHITE;
 use graphics::{Context, Text, Transformed};
 use opengl_graphics::{GlGraphics, GlyphCache};
-
+use piston::{Button, ButtonArgs, ButtonState, Key};
 
 // ********** Defaults **************
 const SCALE_FACTOR: f64 = 0.00000015;
@@ -42,43 +42,80 @@ impl Settings {
         r.max(self.min_radius)
     }
 
-    pub(crate) fn zoom_out(&mut self) {
+    fn zoom_out(&mut self) {
         if self.scale_factor > SCALE_FACTOR * MIN_SCALE {
             self.scale_factor /= ZOOM_FACTOR;
         }
     }
-    pub(crate) fn zoom_in(&mut self) {
+    fn zoom_in(&mut self) {
         if self.scale_factor < SCALE_FACTOR * MAX_SCALE {
             self.scale_factor *= ZOOM_FACTOR;
         }
     }
 
-    pub(crate) fn slow_down(&mut self) {
+    fn slow_down(&mut self) {
         if self.v_factor > V_FACTOR * MIN_SPEED {
             self.v_factor /= ZOOM_FACTOR;
         }
     }
 
-    pub(crate) fn speed_up(&mut self) {
+    fn speed_up(&mut self) {
         if self.v_factor < V_FACTOR * MAX_SPEED {
             self.v_factor *= ZOOM_FACTOR;
         }
     }
 
-    pub(crate) fn decrease_planet_size(&mut self) {
+    fn decrease_planet_size(&mut self) {
         if self.min_radius > MIN_DRAW_RADIUS {
             self.min_radius /= ZOOM_FACTOR;
         }
     }
 
-    pub(crate) fn increase_planet_size(&mut self) {
+    fn increase_planet_size(&mut self) {
         if self.min_radius < MAX_DRAW_RADIUS {
             self.min_radius *= ZOOM_FACTOR;
         }
     }
 
-    pub(crate) fn toggle_orbits(&mut self) {
+    fn toggle_orbits(&mut self) {
         self.show_orbits = !self.show_orbits;
+    }
+
+    fn key_control(&mut self, key: &Key) {
+        match key {
+            Key::LeftBracket => self.zoom_out(),           // `[` Zoom out
+            Key::RightBracket => self.zoom_in(),           // `]` Zoom in
+            Key::Comma => self.slow_down(),                // `,` Slow down
+            Key::Period => self.speed_up(),                // `.` Speed up
+            Key::Quote => self.decrease_planet_size(),     // `'` Decrease sizes
+            Key::Backslash => self.increase_planet_size(), // `\` Increase sizes
+            Key::O => self.toggle_orbits(),                // `o` Toggle orbits
+            _ => {}
+        }
+    }
+
+    pub(crate) fn control(&mut self, args: &ButtonArgs) {
+        if args.state == ButtonState::Press {
+            match args.button {
+                Button::Keyboard(key) => self.key_control(&key),
+                Button::Mouse(_) => {}
+                Button::Controller(_) => {}
+                Button::Hat(_) => {}
+            }
+        }
+    }
+
+    pub(crate) fn scroll(&mut self, args: &[f64; 2]) {
+        let _horizontal_scroll = args[0];
+        let vertical_scroll = args[1];
+
+        if vertical_scroll > 0.0 {
+            self.zoom_out();
+        }
+
+        if vertical_scroll < 0.0 {
+            self.zoom_in();
+        }
     }
 
     pub(crate) fn scale(&self, coordinate: f64) -> f64 {
@@ -119,11 +156,17 @@ impl Settings {
             "Solar System View".to_string(),
             format!(
                 "Zoom:  {:>12}",
-                format!("x{:.2}", (self.scale_factor / SCALE_FACTOR).clamp(MIN_SCALE, MAX_SCALE))
+                format!(
+                    "x{:.2}",
+                    (self.scale_factor / SCALE_FACTOR).clamp(MIN_SCALE, MAX_SCALE)
+                )
             ),
             format!(
                 "Speed: {:>12}",
-                format!("x{:.2}", (self.v_factor / V_FACTOR).clamp(MIN_SPEED, MAX_SPEED))
+                format!(
+                    "x{:.2}",
+                    (self.v_factor / V_FACTOR).clamp(MIN_SPEED, MAX_SPEED)
+                )
             ),
             format!(
                 "Sizes:     {:>12.2}",

@@ -18,8 +18,7 @@ use opengl_graphics::{GlGraphics, GlyphCache, OpenGL, TextureSettings};
 use piston::event_loop::{EventSettings, Events};
 use piston::window::WindowSettings;
 use piston::{
-    Button, ButtonArgs, ButtonEvent, ButtonState, Key, MouseScrollEvent, RenderArgs, RenderEvent,
-    UpdateArgs, UpdateEvent,
+    ButtonArgs, ButtonEvent, MouseScrollEvent, RenderArgs, RenderEvent, UpdateArgs, UpdateEvent,
 };
 use rusttype::Font;
 
@@ -50,7 +49,6 @@ struct App<'a> {
 }
 
 impl App<'_> {
-
     fn new<'a>(opengl: OpenGL) -> App<'a> {
         let settings = Settings::default();
         let glyphs = setup_glyphs();
@@ -83,41 +81,12 @@ impl App<'_> {
             .for_each(|body| body.update(&self.settings, args));
     }
 
-    fn key_control(&mut self, key: &Key) {
-        match key {
-            Key::LeftBracket => self.settings.zoom_out(), // `[` Zoom out
-            Key::RightBracket => self.settings.zoom_in(), // `]` Zoom in
-            Key::Comma => self.settings.slow_down(),      // `,` Slow down
-            Key::Period => self.settings.speed_up(),      // `.` Speed up
-            Key::Quote => self.settings.decrease_planet_size(), // `'` Decrease sizes
-            Key::Backslash => self.settings.increase_planet_size(), // `\` Increase sizes
-            Key::O => self.settings.toggle_orbits(),      // `o` Toggle orbits
-            _ => {}
-        }
-    }
-
     fn control(&mut self, args: &ButtonArgs) {
-        if args.state == ButtonState::Press {
-            match args.button {
-                Button::Keyboard(key) => self.key_control(&key),
-                Button::Mouse(_) => {}
-                Button::Controller(_) => {}
-                Button::Hat(_) => {}
-            }
-        }
+        self.settings.control(args)
     }
 
     fn scroll(&mut self, args: &[f64; 2]) {
-        let _horizontal_scroll = args[0] / WIDTH;
-        let vertical_scroll = args[1] / HEIGHT;
-
-        if vertical_scroll > 0.0 {
-            self.settings.zoom_out();
-        }
-
-        if vertical_scroll < 0.0 {
-            self.settings.zoom_in();
-        }
+        self.settings.scroll(args);
     }
 }
 
