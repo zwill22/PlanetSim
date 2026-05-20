@@ -81,6 +81,12 @@ impl Settings {
         self.show_orbits = !self.show_orbits;
     }
 
+    fn reset(&mut self) {
+        self.scale_factor = SCALE_FACTOR;
+        self.min_radius = MIN_RADIUS;
+        self.v_factor = V_FACTOR;
+    }
+
     fn key_control(&mut self, key: &Key) {
         match key {
             Key::LeftBracket => self.zoom_out(),           // `[` Zoom out
@@ -90,6 +96,7 @@ impl Settings {
             Key::Quote => self.decrease_planet_size(),     // `'` Decrease sizes
             Key::Backslash => self.increase_planet_size(), // `\` Increase sizes
             Key::O => self.toggle_orbits(),                // `o` Toggle orbits
+            Key::R => self.reset(),                        // `r` Reset settings to default
             _ => {}
         }
     }
