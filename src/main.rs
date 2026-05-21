@@ -1,3 +1,4 @@
+mod bodies;
 mod body;
 mod data;
 mod settings;
@@ -8,9 +9,9 @@ extern crate graphics;
 extern crate opengl_graphics;
 extern crate piston;
 
+use crate::bodies::Bodies;
 use crate::data::Data;
 use crate::settings::Settings;
-use body::Body;
 use glutin_window::GlutinWindow;
 use graphics::clear;
 use graphics::color::BLACK;
@@ -45,16 +46,19 @@ struct App<'a> {
     settings: Settings,
     glyphs: GlyphCache<'a>,
     data: Data,
-    bodies: Vec<Body>,
+    bodies: Bodies,
 }
 
 impl App<'_> {
-    fn new<'a>(opengl: OpenGL) -> App<'a> {
-        let gl = GlGraphics::new(opengl);
-        let settings = Settings::default();
+    fn new<'a>() -> App<'a> {
+        let gl = GlGraphics::new(OPENGL);
+        let mut settings = Settings::default();
         let data = Data::new();
         let bodies = data.get_bodies(&settings);
         let glyphs = setup_glyphs();
+
+        let scales = bodies.get_scales();
+        settings.refocus(scales);
 
         App {
             gl,
@@ -77,24 +81,22 @@ impl App<'_> {
 
             self.settings.render(&c, g, &mut self.glyphs);
 
-            self.bodies
-                .iter()
-                .for_each(|body| body.render(&c, g, x0, y0))
+            self.bodies.render(&c, g, x0, y0)
         })
     }
 
     fn update_bodies(&mut self) {
         if self.settings.new_focus() {
             self.bodies = self.data.get_bodies(&self.settings);
+            let scales = self.bodies.get_scales();
+            self.settings.refocus(scales);
         }
     }
 
     fn update(&mut self, args: &UpdateArgs) {
         self.update_bodies();
 
-        self.bodies
-            .iter_mut()
-            .for_each(|body| body.update(&self.settings, args));
+        self.bodies.update(&self.settings, args);
     }
 
     fn control(&mut self, args: &ButtonArgs) {
@@ -115,7 +117,7 @@ fn main() {
         .build()
         .unwrap();
 
-    let mut app = App::new(OPENGL);
+    let mut app = App::new();
 
     let mut events = Events::new(EventSettings::new());
     while let Some(e) = events.next(&mut window) {

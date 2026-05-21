@@ -5,9 +5,7 @@ use opengl_graphics::{GlGraphics, GlyphCache};
 use piston::{Button, ButtonArgs, ButtonState, Key};
 
 // ********** Defaults **************
-const SCALE_FACTOR: f64 = 0.00000015;
 const MIN_RADIUS: f64 = 2.0;
-const V_FACTOR: f64 = 1000000000.0;
 const SHOW_ORBITS: bool = true;
 const ZOOM_FACTOR: f64 = 1.1;
 const MIN_SCALE: f64 = 0.1;
@@ -74,6 +72,8 @@ fn render_show_controls(c: &Context, g: &mut GlGraphics, glyphs: &mut GlyphCache
 }
 
 pub(crate) struct Settings {
+    initial_scale: f64,
+    initial_speed: f64,
     scale_factor: f64,
     show_orbits: bool,
     min_radius: f64,
@@ -86,10 +86,12 @@ pub(crate) struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
-            scale_factor: SCALE_FACTOR,
+            initial_scale: 1.0,
+            initial_speed: 1.0,
+            scale_factor: 1.0,
             show_orbits: SHOW_ORBITS,
             min_radius: MIN_RADIUS,
-            v_factor: V_FACTOR,
+            v_factor: 1.0,
             show_controls: SHOW_CONTROLS,
             changed_focus: false,
             focus: 0,
@@ -99,7 +101,7 @@ impl Default for Settings {
 
 impl Settings {
     pub(crate) fn get_radius(&self, radius: f64) -> f64 {
-        let r = radius * self.scale_factor;
+        let r = radius * self.scale_factor * self.initial_scale;
 
         r.max(self.min_radius)
     }
@@ -109,24 +111,24 @@ impl Settings {
     }
 
     fn zoom_out(&mut self) {
-        if self.scale_factor > SCALE_FACTOR * MIN_SCALE {
+        if self.scale_factor > MIN_SCALE {
             self.scale_factor /= ZOOM_FACTOR;
         }
     }
     fn zoom_in(&mut self) {
-        if self.scale_factor < SCALE_FACTOR * MAX_SCALE {
+        if self.scale_factor < MAX_SCALE {
             self.scale_factor *= ZOOM_FACTOR;
         }
     }
 
     fn slow_down(&mut self) {
-        if self.v_factor > V_FACTOR * MIN_SPEED {
+        if self.v_factor > MIN_SPEED {
             self.v_factor /= ZOOM_FACTOR;
         }
     }
 
     fn speed_up(&mut self) {
-        if self.v_factor < V_FACTOR * MAX_SPEED {
+        if self.v_factor < MAX_SPEED {
             self.v_factor *= ZOOM_FACTOR;
         }
     }
@@ -148,9 +150,9 @@ impl Settings {
     }
 
     fn reset(&mut self) {
-        self.scale_factor = SCALE_FACTOR;
+        self.scale_factor = 1.0;
         self.min_radius = MIN_RADIUS;
-        self.v_factor = V_FACTOR;
+        self.v_factor = 1.0;
     }
 
     fn toggle_controls(&mut self) {
@@ -180,12 +182,18 @@ impl Settings {
     }
 
     pub(crate) fn new_focus(&mut self) -> bool {
-        if self.changed_focus {
-            self.changed_focus = false;
-            return true;
+        self.changed_focus
+    }
+
+    pub(crate) fn refocus(&mut self, scales: (Option<f64>, Option<f64>)) {
+        if let Some(length_scale) = scales.0 {
+            self.initial_scale = length_scale;
         }
 
-        false
+        if let Some(time_scale) = scales.1 {
+            self.initial_speed = time_scale;
+        }
+        self.changed_focus = false;
     }
 
     pub(crate) fn is_focus(&self, name: Option<&str>) -> bool {
@@ -205,18 +213,10 @@ impl Settings {
 
         match self.get_focus().as_str() {
             "Sun" => satellite,
-            "Mercury" => object != "Mercury",
-            "Venus" => object != "Venus",
             "Earth" => object != "Earth" && object != "Moon",
-            "Mars" => object != "Mars",
-            "Jupiter" => object != "Jupiter",
-            "Saturn" => object != "Saturn",
-            "Uranus" => object != "Uranus",
-            "Neptune" => object != "Neptune",
-            &_ => true,
+            planet => object != planet,
         }
     }
-
 
     fn key_control(&mut self, key: &Key) {
         match key {
@@ -260,12 +260,12 @@ impl Settings {
     }
 
     pub(crate) fn scale(&self, coordinate: f64) -> f64 {
-        coordinate * self.scale_factor
+        coordinate * self.scale_factor * self.initial_scale
     }
 
     pub(crate) fn get_orbit(&self, orbit: &[f64; 4]) -> Option<[f64; 4]> {
         if self.show_orbits {
-            let out = orbit.map(|x| x * self.scale_factor);
+            let out = orbit.map(|x| x * self.scale_factor * self.initial_scale);
             return Some(out);
         }
 
@@ -277,26 +277,25 @@ impl Settings {
         coordinates: &(f64, f64),
         orbital_coefficient: f64,
     ) -> f64 {
-        let r0 = coordinates.0 / self.scale_factor; // Unscaled radius
+        let r0 = coordinates.0 / (self.scale_factor * self.initial_scale); // Unscaled radius
 
         // \omega = c / r^2
-        self.v_factor * orbital_coefficient / (r0 * r0)
+        self.v_factor * self.initial_speed * orbital_coefficient / (r0 * r0)
     }
 
     fn get_settings_strings(&self) -> Vec<String> {
         let mut output = Vec::new();
-
 
         output.push("Solar System View".to_string());
 
         let focus = format!("Focus: {:>12}", TARGETS[self.focus]);
         output.push(focus);
 
-        let zoom = (self.scale_factor / SCALE_FACTOR).clamp(MIN_SCALE, MAX_SCALE);
+        let zoom = self.scale_factor.clamp(MIN_SCALE, MAX_SCALE);
         let zoom_string = format!("Zoom:  {:>12}", format!("x{:.2}", zoom));
         output.push(zoom_string);
 
-        let speed = (self.v_factor / V_FACTOR).clamp(MIN_SPEED, MAX_SPEED);
+        let speed = self.v_factor.clamp(MIN_SPEED, MAX_SPEED);
         let speed_string = format!("Speed: {:>12}", format!("x{:.2}", speed));
 
         output.push(speed_string);

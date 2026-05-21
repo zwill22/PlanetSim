@@ -197,6 +197,19 @@ impl Body {
 
         settings.get_orbit(&orbit)
     }
+    
+    pub(crate) fn get_scale(&self) -> f64 {
+        match &self.orbital_parameters {
+            None => self.radius,
+            Some(orbit) => {
+                orbit.periapsis
+            }
+        }
+    }
+    
+    pub(crate) fn get_time_scale(&self) -> Option<f64> {
+        self.orbital_parameters.as_ref().map(|orbit| orbit.period)
+    }
 
     pub(crate) fn update(&mut self, settings: &Settings, args: &UpdateArgs) {
         self.draw_radius = settings.get_radius(self.radius);

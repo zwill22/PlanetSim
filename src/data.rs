@@ -1,3 +1,4 @@
+use crate::bodies::Bodies;
 use crate::body::Body;
 use crate::settings::Settings;
 use polars::prelude::*;
@@ -127,7 +128,7 @@ impl Data {
         self.df.column(name).unwrap().f64().unwrap()
     }
 
-    pub(crate) fn get_bodies(&self, settings: &Settings) -> Vec<Body> {
+    pub(crate) fn get_bodies(&self, settings: &Settings) -> Bodies {
         let mut output = vec![];
 
         let names = self.get_str_column("name");
@@ -157,6 +158,6 @@ impl Data {
             output.push(body);
         }
 
-        output
+        Bodies::new(output)
     }
 }
