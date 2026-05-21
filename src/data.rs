@@ -47,6 +47,13 @@ fn family() -> Expr {
     expr.otherwise(lit("Unknown")).alias("description")
 }
 
+fn semi_major() -> Expr {
+    col("a_prp(km)").fill_null(col("a_osc (km)")).alias("a")
+}
+
+fn eccentricity() -> Expr {
+    col("e_prp").fill_null("e_osc").alias("e")
+}
 fn satellite() -> Expr {
     when(col("description").eq(lit("Asteroid")))
         .then(false)
@@ -72,20 +79,22 @@ fn dynamic_data() -> LazyFrame {
         .finish()
         .unwrap();
 
-    lf.select([
-        col("name"),
-        col("fam").alias("family"),
-        col("a_prp(km)").cast(DataType::Float64).alias("a"),
-        col("e_prp").cast(DataType::Float64).alias("e"),
-        col("P (d)").cast(DataType::Float64).alias("period"),
-    ])
-    .with_column(family())
-    .with_columns([satellite(), prograde()])
-    .filter(
-        col("description")
-            .neq(lit("Unknown"))
-            .and(col("name").is_not_null()),
-    )
+    lf.with_columns([semi_major(), eccentricity()])
+        .select([
+            col("number"),
+            col("name"),
+            col("fam").alias("family"),
+            col("a").cast(DataType::Float64),
+            col("e").cast(DataType::Float64),
+            col("P (d)").cast(DataType::Float64).alias("period"),
+        ])
+        .with_column(family())
+        .with_columns([satellite(), prograde()])
+        .filter(
+            col("description")
+                .neq(lit("Unknown"))
+                .and(col("name").is_not_null()),
+        )
 }
 
 fn physical_data() -> LazyFrame {
