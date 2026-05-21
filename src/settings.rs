@@ -20,6 +20,11 @@ const SHOW_CONTROLS: bool = false;
 const FONT_SIZE: f64 = 24.0;
 // **********************************
 
+const TARGETS: [&str; 17] = [
+    "Sun", "Mercury", "Venus", "Earth", "Mars", "Vesta", "Ceres", "Pallas", "Jupiter", "Saturn",
+    "Uranus", "Neptune", "Pluto", "Haumea", "Makemake", "Gonggong", "Eris",
+];
+
 fn render_text(
     strings: &Vec<String>,
     position: &(f64, f64),
@@ -34,7 +39,7 @@ fn render_text(
 
     for string in strings {
         let transform = c.transform.trans(x, y);
-        text.draw(&string, glyphs, &c.draw_state, transform, g)
+        text.draw(string, glyphs, &c.draw_state, transform, g)
             .expect("Error drawing text");
         y += FONT_SIZE * 1.5;
     }
@@ -47,7 +52,7 @@ fn control_list() -> Vec<String> {
         "Size -/+                     ['/\\]",
         "Toggle orbits          [o]",
         "Reset settings      [r]",
-        "Toggle controls    [c]"
+        "Toggle controls    [c]",
     ];
 
     strings.iter().map(|s| s.to_string()).collect()
@@ -68,13 +73,14 @@ fn render_show_controls(c: &Context, g: &mut GlGraphics, glyphs: &mut GlyphCache
     render_text(&strings, &position, c, g, glyphs);
 }
 
-
 pub(crate) struct Settings {
     scale_factor: f64,
     show_orbits: bool,
     min_radius: f64,
     v_factor: f64,
     show_controls: bool,
+    changed_focus: bool,
+    focus: usize,
 }
 
 impl Default for Settings {
@@ -85,6 +91,8 @@ impl Default for Settings {
             min_radius: MIN_RADIUS,
             v_factor: V_FACTOR,
             show_controls: SHOW_CONTROLS,
+            changed_focus: false,
+            focus: 0,
         }
     }
 }
@@ -94,6 +102,10 @@ impl Settings {
         let r = radius * self.scale_factor;
 
         r.max(self.min_radius)
+    }
+
+    pub(crate) fn get_focus(&self) -> String {
+        TARGETS[self.focus].to_string()
     }
 
     fn zoom_out(&mut self) {
@@ -145,6 +157,67 @@ impl Settings {
         self.show_controls = !self.show_controls;
     }
 
+    fn previous_target(&mut self) {
+        if self.focus == 0 {
+            self.focus = TARGETS.len() - 1;
+        } else {
+            self.focus -= 1;
+        }
+
+        self.reset();
+        self.changed_focus = true;
+    }
+
+    fn next_target(&mut self) {
+        if self.focus + 1 == TARGETS.len() {
+            self.focus = 0;
+        } else {
+            self.focus += 1;
+        }
+
+        self.reset();
+        self.changed_focus = true;
+    }
+
+    pub(crate) fn new_focus(&mut self) -> bool {
+        if self.changed_focus {
+            self.changed_focus = false;
+            return true;
+        }
+
+        false
+    }
+
+    pub(crate) fn is_focus(&self, name: Option<&str>) -> bool {
+        match name {
+            None => false,
+            Some(val) => val == self.get_focus(),
+        }
+    }
+
+    pub(crate) fn out_of_focus(&self, name: Option<&str>, satellite: bool) -> bool {
+        let object = match name {
+            None => {
+                return true;
+            }
+            Some(value) => value,
+        };
+
+        match self.get_focus().as_str() {
+            "Sun" => satellite,
+            "Mercury" => object != "Mercury",
+            "Venus" => object != "Venus",
+            "Earth" => object != "Earth" && object != "Moon",
+            "Mars" => object != "Mars",
+            "Jupiter" => object != "Jupiter",
+            "Saturn" => object != "Saturn",
+            "Uranus" => object != "Uranus",
+            "Neptune" => object != "Neptune",
+            &_ => true,
+        }
+    }
+
+
     fn key_control(&mut self, key: &Key) {
         match key {
             Key::LeftBracket => self.zoom_out(),           // `[` Zoom out
@@ -156,6 +229,8 @@ impl Settings {
             Key::O => self.toggle_orbits(),                // `o` Toggle orbits
             Key::R => self.reset(),                        // `r` Reset settings to default
             Key::C => self.toggle_controls(),              // `c` Toggle list of controls
+            Key::Left => self.previous_target(),           // `<-` Focus on previous target
+            Key::Right => self.next_target(),              // '->` Focus on next target
             _ => {}
         }
     }
@@ -210,7 +285,12 @@ impl Settings {
 
     fn get_settings_strings(&self) -> Vec<String> {
         let mut output = Vec::new();
+
+
         output.push("Solar System View".to_string());
+
+        let focus = format!("Focus: {:>12}", TARGETS[self.focus]);
+        output.push(focus);
 
         let zoom = (self.scale_factor / SCALE_FACTOR).clamp(MIN_SCALE, MAX_SCALE);
         let zoom_string = format!("Zoom:  {:>12}", format!("x{:.2}", zoom));

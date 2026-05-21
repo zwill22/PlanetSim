@@ -98,46 +98,65 @@ fn physical_data() -> LazyFrame {
     ])
 }
 
-fn get_data() -> DataFrame {
-    let dynamic = dynamic_data();
-    let physical = physical_data();
-
-    dynamic
-        .join(physical, [col("name")], [col("name")], JoinArgs::default())
-        .collect()
-        .unwrap()
+pub(crate) struct Data {
+    df: DataFrame,
 }
 
-pub(crate) fn initialise(settings: &Settings) -> Vec<Body> {
-    let df = get_data();
+impl Data {
+    pub(crate) fn new() -> Data {
+        let dynamic = dynamic_data();
+        let physical = physical_data();
 
-    let mut output = vec![];
+        let df = dynamic
+            .join(physical, [col("name")], [col("name")], JoinArgs::default())
+            .collect()
+            .unwrap();
 
-    let names = df.column("name").unwrap().str().unwrap();
-    let radii = df.column("radius").unwrap().f64().unwrap();
-    let semi_major_axis = df.column("a").unwrap().f64().unwrap();
-    let eccentricities = df.column("e").unwrap().f64().unwrap();
-    let period = df.column("period").unwrap().f64().unwrap();
-    let satellite = df.column("satellite").unwrap().bool().unwrap();
-    let prograde = df.column("prograde").unwrap().bool().unwrap();
-
-    for i in 0..names.len() {
-        let name = names.get(i);
-
-        let radius = radii.get(i).unwrap();
-        let a = semi_major_axis.get(i);
-        let e = eccentricities.get(i);
-        if satellite.get(i).unwrap() {
-            continue;
-        }
-
-        let t = period.get(i);
-        let pro = prograde.get(i).unwrap();
-
-        let body = Body::new(name, radius, a, e, pro, t, settings);
-
-        output.push(body);
+        Data { df }
     }
 
-    output
+    fn get_str_column(&self, name: &str) -> &StringChunked {
+        self.df.column(name).unwrap().str().unwrap()
+    }
+
+    fn get_bool_column(&self, name: &str) -> &BooleanChunked {
+        self.df.column(name).unwrap().bool().unwrap()
+    }
+
+    fn get_f64_column(&self, name: &str) -> &Float64Chunked {
+        self.df.column(name).unwrap().f64().unwrap()
+    }
+
+    pub(crate) fn get_bodies(&self, settings: &Settings) -> Vec<Body> {
+        let mut output = vec![];
+
+        let names = self.get_str_column("name");
+        let radii = self.get_f64_column("radius");
+        let semi_major_axis = self.get_f64_column("a");
+        let eccentricities = self.get_f64_column("e");
+        let period = self.get_f64_column("period");
+        let satellites = self.get_bool_column("satellite");
+        let prograde = self.get_bool_column("prograde");
+
+        for i in 0..names.len() {
+            let name = names.get(i);
+
+            let radius = radii.get(i).unwrap();
+            let a = semi_major_axis.get(i);
+            let e = eccentricities.get(i);
+            let satellite = satellites.get(i).unwrap();
+            if settings.out_of_focus(name, satellite) {
+                continue;
+            }
+
+            let t = period.get(i);
+            let pro = prograde.get(i).unwrap();
+
+            let body = Body::new(name, radius, a, e, pro, t, settings);
+
+            output.push(body);
+        }
+
+        output
+    }
 }

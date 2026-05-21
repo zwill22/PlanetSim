@@ -8,7 +8,7 @@ extern crate graphics;
 extern crate opengl_graphics;
 extern crate piston;
 
-use crate::data::initialise;
+use crate::data::Data;
 use crate::settings::Settings;
 use body::Body;
 use glutin_window::GlutinWindow;
@@ -27,7 +27,6 @@ const OPENGL: OpenGL = OpenGL::V4_5;
 const TITLE: &str = "Solar System";
 const FULLSCREEN: bool = false;
 const SAMPLES: u8 = 0;
-
 const WIDTH: f64 = 3072.0;
 const HEIGHT: f64 = 2048.0;
 const EXIT_ON_ESCAPE: bool = true;
@@ -43,26 +42,35 @@ fn setup_glyphs<'a>() -> GlyphCache<'a> {
 
 struct App<'a> {
     gl: GlGraphics,
-    bodies: Vec<Body>,
     settings: Settings,
     glyphs: GlyphCache<'a>,
+    data: Data,
+    bodies: Vec<Body>,
 }
 
 impl App<'_> {
     fn new<'a>(opengl: OpenGL) -> App<'a> {
+        let gl = GlGraphics::new(opengl);
         let settings = Settings::default();
+        let data = Data::new();
+        let bodies = data.get_bodies(&settings);
         let glyphs = setup_glyphs();
+
         App {
-            gl: GlGraphics::new(opengl),
-            bodies: initialise(&settings),
+            gl,
             settings,
             glyphs,
+            data,
+            bodies,
         }
     }
 
+    fn get_centre(&self, args: &RenderArgs) -> (f64, f64) {
+        (args.window_size[0] / 2.0, args.window_size[1] / 2.0)
+    }
+
     fn render(&mut self, args: &RenderArgs) {
-        let x0 = args.window_size[0] / 2.0;
-        let y0 = args.window_size[1] / 2.0;
+        let (x0, y0) = self.get_centre(args);
 
         self.gl.draw(args.viewport(), |c, g| {
             clear(BLACK, g);
@@ -75,7 +83,15 @@ impl App<'_> {
         })
     }
 
+    fn update_bodies(&mut self) {
+        if self.settings.new_focus() {
+            self.bodies = self.data.get_bodies(&self.settings);
+        }
+    }
+
     fn update(&mut self, args: &UpdateArgs) {
+        self.update_bodies();
+
         self.bodies
             .iter_mut()
             .for_each(|body| body.update(&self.settings, args));

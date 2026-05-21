@@ -110,6 +110,20 @@ impl Body {
         settings: &Settings,
     ) -> Body {
         let col = colour(name);
+
+        let initial_radius = settings.get_radius(size);
+
+        if settings.is_focus(name) {
+            return Body {
+                colour: col,
+                radius: size,
+                orbital_parameters: None,
+                coordinates: (0.0, 0.0),
+                orbit: None,
+                draw_radius: initial_radius,
+            };
+        }
+
         let orbit = orbital_parameters(a, e, period, prograde);
 
         let initial_coordinates = match &orbit {
@@ -121,8 +135,6 @@ impl Body {
             Some(parameters) => settings.get_orbit(&parameters.get_orbit()),
             None => None,
         };
-
-        let initial_radius = settings.get_radius(size);
 
         Body {
             colour: col,
