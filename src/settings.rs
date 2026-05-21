@@ -71,6 +71,13 @@ fn render_show_controls(c: &Context, g: &mut GlGraphics, glyphs: &mut GlyphCache
     render_text(&strings, &position, c, g, glyphs);
 }
 
+fn not(number: Option<&str>, focus: &str, name: &str, id: &str) -> bool {
+    match number {
+        None => name != focus,
+        Some(val) => !val.starts_with(id),
+    }
+}
+
 pub(crate) struct Settings {
     initial_scale: f64,
     initial_speed: f64,
@@ -203,7 +210,12 @@ impl Settings {
         }
     }
 
-    pub(crate) fn out_of_focus(&self, name: Option<&str>, satellite: bool) -> bool {
+    pub(crate) fn out_of_focus(
+        &self,
+        name: Option<&str>,
+        satellite: bool,
+        number: Option<&str>,
+    ) -> bool {
         let object = match name {
             None => {
                 return true;
@@ -214,6 +226,15 @@ impl Settings {
         match self.get_focus().as_str() {
             "Sun" => satellite,
             "Earth" => object != "Earth" && object != "Moon",
+            "Mars" => not(number, "Mars", object, "M"),
+            "Jupiter" => not(number, "Jupiter", object, "J"),
+            "Saturn" => not(number, "Saturn", object, "S"),
+            "Uranus" => not(number, "Uranus", object, "U"),
+            "Neptune" => not(number, "Neptune", object, "N"),
+            "Pluto" => not(number, "Pluto", object, "134340"),
+            "Haumea" => not(number, "Haumea", object, "136108"),
+            "Gonggong" => not(number, "Gonggong", object, "225088"),
+            "Eris" => not(number, "Eris", object, "136199"),
             planet => object != planet,
         }
     }

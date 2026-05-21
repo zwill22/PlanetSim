@@ -52,7 +52,13 @@ fn semi_major() -> Expr {
 }
 
 fn eccentricity() -> Expr {
-    col("e_prp").fill_null("e_osc").alias("e")
+    col("e_prp").fill_null(col("e_osc")).alias("e")
+}
+
+fn period() -> Expr {
+    col("P (d)_duplicated_0")
+        .fill_null(col("P (d)"))
+        .alias("period")
 }
 fn satellite() -> Expr {
     when(col("description").eq(lit("Asteroid")))
@@ -79,14 +85,14 @@ fn dynamic_data() -> LazyFrame {
         .finish()
         .unwrap();
 
-    lf.with_columns([semi_major(), eccentricity()])
+    lf.with_columns([semi_major(), eccentricity(), period()])
         .select([
             col("number"),
             col("name"),
             col("fam").alias("family"),
             col("a").cast(DataType::Float64),
             col("e").cast(DataType::Float64),
-            col("P (d)").cast(DataType::Float64).alias("period"),
+            col("period").cast(DataType::Float64),
         ])
         .with_column(family())
         .with_columns([satellite(), prograde()])
@@ -141,6 +147,7 @@ impl Data {
         let mut output = vec![];
 
         let names = self.get_str_column("name");
+        let numbers = self.get_str_column("number");
         let radii = self.get_f64_column("radius");
         let semi_major_axis = self.get_f64_column("a");
         let eccentricities = self.get_f64_column("e");
@@ -150,12 +157,16 @@ impl Data {
 
         for i in 0..names.len() {
             let name = names.get(i);
+            let number = numbers.get(i);
 
             let radius = radii.get(i).unwrap();
+            if radius < 5.0 {
+                continue;
+            }
             let a = semi_major_axis.get(i);
             let e = eccentricities.get(i);
             let satellite = satellites.get(i).unwrap();
-            if settings.out_of_focus(name, satellite) {
+            if settings.out_of_focus(name, satellite, number) {
                 continue;
             }
 
