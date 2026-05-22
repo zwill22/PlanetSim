@@ -8,7 +8,7 @@ use piston::UpdateArgs;
 use rand::{RngExt, rng};
 use std::collections::HashMap;
 
-const COLOURS: [(&str, &str); 40] = [
+const COLOURS: [(&str, &str); 42] = [
     // Sun
     ("Sun", "ffffff"),
     // Mercury
@@ -37,7 +37,9 @@ const COLOURS: [(&str, &str); 40] = [
     ("Mimas", "515151"),
     ("Enceladus", "e8e8e8"),
     ("Tethys", "c6c6c6"),
+    ("Calypso", "c6c6c6"),
     ("Dione", "b1b0b1"),
+    ("Helene", "b1b0b1"),
     ("Rhea", "c2c2c2"),
     ("Titan", "be9a52"),
     ("Iapetus", "928e8b"),
@@ -147,6 +149,7 @@ pub(crate) struct Body {
     coordinates: (f64, f64),
     orbit: Option<[f64; 4]>,
     draw_radius: f64,
+    show_name: bool,
 }
 
 impl Body {
@@ -172,6 +175,7 @@ impl Body {
                 coordinates: (0.0, 0.0),
                 orbit: None,
                 draw_radius: initial_radius,
+                show_name: settings.show_name(),
             };
         }
 
@@ -197,6 +201,7 @@ impl Body {
             coordinates: initial_coordinates,
             orbit: initial_orbit,
             draw_radius: initial_radius,
+            show_name: settings.show_name(),
         }
     }
 
@@ -221,6 +226,9 @@ impl Body {
         xc: f64,
         yc: f64,
     ) {
+        if !self.show_name {
+            return;
+        }
         let name = match &self.name {
             None => {
                 return;
@@ -328,5 +336,7 @@ impl Body {
         self.coordinates.0 = self.r(settings);
 
         self.orbit = self.orbit(settings);
+
+        self.show_name = settings.show_name()
     }
 }

@@ -1,5 +1,5 @@
 use crate::text::render_text;
-use graphics::{Context};
+use graphics::Context;
 use graphics::color::WHITE;
 use opengl_graphics::{GlGraphics, GlyphCache};
 use piston::{Button, ButtonArgs, ButtonState, Key};
@@ -7,10 +7,11 @@ use piston::{Button, ButtonArgs, ButtonState, Key};
 // ********** Defaults **************
 const MIN_RADIUS: f64 = 2.0;
 const SHOW_ORBITS: bool = true;
+const SHOW_NAMES: bool = false;
 const ZOOM_FACTOR: f64 = 1.1;
 const MIN_SCALE: f64 = 0.1;
 const MAX_SCALE: f64 = 2000.0;
-const MIN_SPEED: f64 = 0.01;
+const MIN_SPEED: f64 = 0.001;
 const MAX_SPEED: f64 = 2000.0;
 const MIN_DRAW_RADIUS: f64 = 1.0;
 const MAX_DRAW_RADIUS: f64 = 5.0;
@@ -31,6 +32,7 @@ fn control_list() -> Vec<String> {
         "Toggle orbits          [o]",
         "Reset settings      [r]",
         "Toggle controls    [c]",
+        "Toggle names       [n]"
     ];
 
     strings.iter().map(|s| s.to_string()).collect()
@@ -66,6 +68,7 @@ pub(crate) struct Settings {
     min_radius: f64,
     v_factor: f64,
     show_controls: bool,
+    show_names: bool,
     changed_focus: bool,
     focus: usize,
 }
@@ -80,6 +83,7 @@ impl Default for Settings {
             min_radius: MIN_RADIUS,
             v_factor: 1.0,
             show_controls: SHOW_CONTROLS,
+            show_names: SHOW_NAMES,
             changed_focus: false,
             focus: 0,
         }
@@ -168,6 +172,14 @@ impl Settings {
         self.changed_focus = true;
     }
 
+    fn toggle_names(&mut self) {
+        self.show_names = !self.show_names;
+    }
+
+    pub(crate) fn show_name(&self) -> bool {
+        self.show_names
+    }
+
     pub(crate) fn new_focus(&mut self) -> bool {
         self.changed_focus
     }
@@ -232,6 +244,7 @@ impl Settings {
             Key::C => self.toggle_controls(),              // `c` Toggle list of controls
             Key::Left => self.previous_target(),           // `<-` Focus on previous target
             Key::Right => self.next_target(),              // '->` Focus on next target
+            Key::N => self.toggle_names(),                          // `n` Toggle names
             _ => {}
         }
     }
@@ -311,6 +324,13 @@ impl Settings {
             "Orbits:             OFF"
         };
         output.push(orbits.to_string());
+
+        let names = if self.show_names {
+            "Names:            ON"
+        } else {
+            "Names:          OFF"
+        };
+        output.push(names.to_string());
 
         output
     }
