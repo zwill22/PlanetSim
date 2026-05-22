@@ -2,6 +2,7 @@ mod bodies;
 mod body;
 mod data;
 mod settings;
+mod text;
 
 extern crate approx;
 extern crate glutin_window;
@@ -76,13 +77,17 @@ impl App<'_> {
     fn render(&mut self, args: &RenderArgs) {
         let (x0, y0) = self.get_centre(args);
 
-        self.gl.draw(args.viewport(), |c, g| {
-            clear(BLACK, g);
+        let context = self.gl.draw_begin(args.viewport());
 
-            self.settings.render(&c, g, &mut self.glyphs);
+        clear(BLACK, &mut self.gl);
 
-            self.bodies.render(&c, g, x0, y0)
-        })
+        self.settings
+            .render(&context, &mut self.gl, &mut self.glyphs);
+
+        self.bodies.render(&context, &mut self.gl, &mut self.glyphs, x0, y0);
+        
+
+        self.gl.draw_end();
     }
 
     fn update_bodies(&mut self) {

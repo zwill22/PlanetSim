@@ -11,3 +11,4 @@ piston2d-opengl_graphics = "0.89.0"
 polars = { version = "0.53.0", features = ["lazy", "csv", "rows", "strings", "regex"]}
 approx = "0.5.1"
 rusttype = "0.9.3"
+rand = "0.10.1"

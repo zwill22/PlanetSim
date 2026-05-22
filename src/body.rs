@@ -1,25 +1,74 @@
 use crate::settings::Settings;
-use graphics::color::{BLUE, CYAN, GRAY, RED, TEAL, WHITE, YELLOW, hex};
-use graphics::{Context, Ellipse, Transformed, ellipse};
-use opengl_graphics::GlGraphics;
+use crate::text::render_text;
+use graphics::color::{GRAY, hex};
+use graphics::types::FontSize;
+use graphics::{CharacterCache, Context, Ellipse, Transformed, ellipse};
+use opengl_graphics::{GlGraphics, GlyphCache};
 use piston::UpdateArgs;
+use rand::{RngExt, rng};
+use std::collections::HashMap;
+
+const COLOURS: [(&str, &str); 40] = [
+    // Sun
+    ("Sun", "ffffff"),
+    // Mercury
+    ("Mercury", "8d8988"),
+    // Venus
+    ("Venus", "cf8932"),
+    // Earth
+    ("Earth", "526173"),
+    ("Moon", "655f5e"),
+    // Mars
+    ("Mars", "d42f15"),
+    ("Phobos", "8f7a6d"),
+    ("Deimos", "7d7068"),
+    // Asteroid belt
+    ("Vesta", "89877f"),
+    ("Ceres", "7a6e6d"),
+    ("Pallas", "b3b3b3"),
+    // Jupiter
+    ("Jupiter", "d48e58"),
+    ("Io", "c9c056"),
+    ("Europa", "72685c"),
+    ("Ganymede", "9d9183"),
+    ("Callisto", "5d5643"),
+    // Saturn
+    ("Saturn", "e7c57c"),
+    ("Mimas", "515151"),
+    ("Enceladus", "e8e8e8"),
+    ("Tethys", "c6c6c6"),
+    ("Dione", "b1b0b1"),
+    ("Rhea", "c2c2c2"),
+    ("Titan", "be9a52"),
+    ("Iapetus", "928e8b"),
+    // Uranus
+    ("Uranus", "00cad2"),
+    ("Miranda", "9f9fa0"),
+    ("Ariel", "565656"),
+    ("Umbriel", "383838"),
+    ("Titania", "7e7d7f"),
+    ("Oberon", "7e746a"),
+    // Neptune
+    ("Neptune", "3e65fa"),
+    ("Triton", "b5b5b5"),
+    ("Nereid", "6c6653"),
+    ("Naiad", "a8a7a5"),
+    ("Thalassa", "a8a28e"),
+    // TNOs
+    ("Pluto", "A52A2A"),
+    ("Haumea", "96857d"),
+    ("Makemake", "744c45"),
+    ("Gonggong", "8c6e6a"),
+    ("Eris", "babac6"),
+];
 
 fn colour(body: Option<&str>) -> [f32; 4] {
     let Some(name) = body else { return GRAY };
-    match name {
-        "Sun" => WHITE,
-        "Mercury" => GRAY,
-        "Venus" => hex("FF8C00"),
-        "Earth" => TEAL,
-        "Mars" => RED,
-        "Ceres" => GRAY,
-        "Jupiter" => hex("FFA500"),
-        "Saturn" => YELLOW,
-        "Uranus" => CYAN,
-        "Neptune" => BLUE,
-        "Pluto" => hex("A52A2A"),
-        "Eris" => GRAY,
-        &_ => GRAY,
+    let map: HashMap<_, _> = COLOURS.into_iter().collect();
+
+    match map.get(name) {
+        Some(result) => hex(result),
+        None => hex("202020"),
     }
 }
 
@@ -91,6 +140,7 @@ fn orbital_parameters(
 }
 
 pub(crate) struct Body {
+    name: Option<String>,
     colour: [f32; 4],
     radius: f64,
     orbital_parameters: Option<OrbitalParameters>,
@@ -115,6 +165,7 @@ impl Body {
 
         if settings.is_focus(name) {
             return Body {
+                name: name.map(String::from),
                 colour: col,
                 radius: size,
                 orbital_parameters: None,
@@ -126,8 +177,10 @@ impl Body {
 
         let orbit = orbital_parameters(a, e, period, prograde);
 
+        let theta = rng().random::<f64>() * std::f64::consts::PI * 2.0;
+
         let initial_coordinates = match &orbit {
-            Some(parameters) => (settings.scale(parameters.periapsis), 0.0),
+            Some(parameters) => (settings.scale(parameters.get_r(theta.cos())), theta),
             None => (0.0, 0.0),
         };
 
@@ -137,6 +190,7 @@ impl Body {
         };
 
         Body {
+            name: name.map(String::from),
             colour: col,
             radius: size,
             orbital_parameters: orbit,
@@ -147,7 +201,8 @@ impl Body {
     }
 
     fn render_body(&self, c: &Context, g: &mut GlGraphics, xc: f64, yc: f64) {
-        let circle = ellipse::circle(0.0, 0.0, self.draw_radius);
+        let rect = ellipse::circle(0.0, 0.0, self.draw_radius);
+        let circle = Ellipse::new(self.colour);
 
         let transform = c
             .transform
@@ -155,7 +210,52 @@ impl Body {
             .rot_rad(self.coordinates.1)
             .trans(self.coordinates.0, 0.0);
 
-        ellipse(self.colour, circle, transform, g)
+        circle.draw(rect, &c.draw_state, transform, g);
+    }
+
+    fn render_name(
+        &self,
+        c: &Context,
+        g: &mut GlGraphics,
+        glyphs: &mut GlyphCache,
+        xc: f64,
+        yc: f64,
+    ) {
+        let name = match &self.name {
+            None => {
+                return;
+            }
+            Some(v) => vec![v.clone()],
+        };
+
+        let r = self.coordinates.0;
+        let theta = self.coordinates.1;
+
+        let orbit = match &self.orbital_parameters {
+            None => {
+                return;
+            }
+            Some(v) => v,
+        };
+
+        if (1.0 + orbit.e * theta.cos()) * r / (1.0 - orbit.e) < 100.0 {
+            return;
+        }
+
+        let font_size = 10.0;
+
+        let width = glyphs.width(font_size as FontSize, &name[0]).unwrap();
+        let height = glyphs
+            .character(font_size as FontSize, 'A')
+            .unwrap()
+            .advance_height();
+
+        let x0 = (r + self.draw_radius + width) * theta.cos() + xc - width / 2.0;
+        let y0 = (r + self.draw_radius + width / 2.0) * theta.sin() + yc - height / 2.0;
+
+        let position = (x0, y0);
+
+        render_text(&name, &position, c, g, glyphs, self.colour, font_size);
     }
 
     fn render_orbit(&self, c: &Context, g: &mut GlGraphics, xc: f64, yc: f64) {
@@ -170,8 +270,16 @@ impl Body {
         ellipse.draw(orbit, &c.draw_state, transform, g);
     }
 
-    pub(crate) fn render(&self, c: &Context, g: &mut GlGraphics, xc: f64, yc: f64) {
+    pub(crate) fn render(
+        &self,
+        c: &Context,
+        g: &mut GlGraphics,
+        glyphs: &mut GlyphCache,
+        xc: f64,
+        yc: f64,
+    ) {
         self.render_body(c, g, xc, yc);
+        self.render_name(c, g, glyphs, xc, yc);
         self.render_orbit(c, g, xc, yc);
     }
 

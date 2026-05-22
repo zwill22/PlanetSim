@@ -1,7 +1,7 @@
 use crate::body::Body;
 use crate::settings::Settings;
 use graphics::Context;
-use opengl_graphics::GlGraphics;
+use opengl_graphics::{GlGraphics, GlyphCache};
 use piston::UpdateArgs;
 
 pub(crate) struct Bodies {
@@ -13,10 +13,17 @@ impl Bodies {
         Bodies { bodies }
     }
 
-    pub(crate) fn render(&self, c: &Context, g: &mut GlGraphics, x0: f64, y0: f64) {
+    pub(crate) fn render(
+        &self,
+        c: &Context,
+        g: &mut GlGraphics,
+        glyphs: &mut GlyphCache,
+        x0: f64,
+        y0: f64,
+    ) {
         self.bodies
             .iter()
-            .for_each(|body| body.render(c, g, x0, y0))
+            .for_each(|body| body.render(c, g, glyphs, x0, y0))
     }
 
     pub(crate) fn update(&mut self, settings: &Settings, args: &UpdateArgs) {

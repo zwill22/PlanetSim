@@ -1,6 +1,6 @@
+use crate::text::render_text;
+use graphics::{Context};
 use graphics::color::WHITE;
-use graphics::types::FontSize;
-use graphics::{Context, Text, Transformed};
 use opengl_graphics::{GlGraphics, GlyphCache};
 use piston::{Button, ButtonArgs, ButtonState, Key};
 
@@ -10,7 +10,7 @@ const SHOW_ORBITS: bool = true;
 const ZOOM_FACTOR: f64 = 1.1;
 const MIN_SCALE: f64 = 0.1;
 const MAX_SCALE: f64 = 2000.0;
-const MIN_SPEED: f64 = 0.1;
+const MIN_SPEED: f64 = 0.01;
 const MAX_SPEED: f64 = 2000.0;
 const MIN_DRAW_RADIUS: f64 = 1.0;
 const MAX_DRAW_RADIUS: f64 = 5.0;
@@ -22,26 +22,6 @@ const TARGETS: [&str; 17] = [
     "Sun", "Mercury", "Venus", "Earth", "Mars", "Vesta", "Ceres", "Pallas", "Jupiter", "Saturn",
     "Uranus", "Neptune", "Pluto", "Haumea", "Makemake", "Gonggong", "Eris",
 ];
-
-fn render_text(
-    strings: &Vec<String>,
-    position: &(f64, f64),
-    c: &Context,
-    g: &mut GlGraphics,
-    glyphs: &mut GlyphCache,
-) {
-    let text = Text::new_color(WHITE, FONT_SIZE as FontSize).round();
-
-    let x = position.0;
-    let mut y = position.1;
-
-    for string in strings {
-        let transform = c.transform.trans(x, y);
-        text.draw(string, glyphs, &c.draw_state, transform, g)
-            .expect("Error drawing text");
-        y += FONT_SIZE * 1.5;
-    }
-}
 
 fn control_list() -> Vec<String> {
     let strings = [
@@ -61,14 +41,14 @@ fn render_control_list(c: &Context, g: &mut GlGraphics, glyphs: &mut GlyphCache)
     let height = c.get_view_size()[1];
     let position = (FONT_SIZE, height - (FONT_SIZE * 1.5) * strings.len() as f64);
 
-    render_text(&strings, &position, c, g, glyphs);
+    render_text(&strings, &position, c, g, glyphs, WHITE, FONT_SIZE);
 }
 
 fn render_show_controls(c: &Context, g: &mut GlGraphics, glyphs: &mut GlyphCache) {
     let strings = vec!["Toggle controls    [c]".to_string()];
     let height = c.get_view_size()[1];
     let position = (FONT_SIZE, height - FONT_SIZE * 1.5);
-    render_text(&strings, &position, c, g, glyphs);
+    render_text(&strings, &position, c, g, glyphs, WHITE, FONT_SIZE);
 }
 
 fn not(number: Option<&str>, focus: &str, name: &str, id: &str) -> bool {
@@ -338,7 +318,7 @@ impl Settings {
         let strings = self.get_settings_strings();
         let position = (FONT_SIZE, FONT_SIZE * 1.5);
 
-        render_text(&strings, &position, c, g, glyphs);
+        render_text(&strings, &position, c, g, glyphs, WHITE, FONT_SIZE);
     }
 
     fn render_controls(&mut self, c: &Context, g: &mut GlGraphics, glyphs: &mut GlyphCache) {
