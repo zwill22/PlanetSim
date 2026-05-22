@@ -8,7 +8,7 @@ use piston::UpdateArgs;
 use rand::{RngExt, rng};
 use std::collections::HashMap;
 
-const COLOURS: [(&str, &str); 42] = [
+const COLOURS: [(&str, &str); 51] = [
     // Sun
     ("Sun", "ffffff"),
     // Mercury
@@ -57,11 +57,25 @@ const COLOURS: [(&str, &str); 42] = [
     ("Naiad", "a8a7a5"),
     ("Thalassa", "a8a28e"),
     // TNOs
+    // Pluto
     ("Pluto", "A52A2A"),
+    ("Charon", "95928f"),
+    ("Styx", "cccccc"),
+    ("Nix", "a9a398"),
+    ("Hydra", "a5a1a2"),
+    ("Kerberos", "92acd3"),
+    // Haumea
     ("Haumea", "96857d"),
+    ("Hi'iaka", "8c8074"),
+    ("Namaka", "8d8d8d"),
+    // Makemake
     ("Makemake", "744c45"),
+    // Gonggong
     ("Gonggong", "8c6e6a"),
+    ("Xiangliu", "5e9ee0"),
+    // Eris
     ("Eris", "babac6"),
+    ("Dysnomia", "5b5a56")
 ];
 
 fn colour(body: Option<&str>) -> [f32; 4] {
