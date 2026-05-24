@@ -300,7 +300,7 @@ impl Settings {
     fn get_settings_strings(&self) -> Vec<String> {
         let mut output = Vec::new();
 
-        output.push("Solar System View".to_string());
+        output.push("Solar System Viewer".to_string());
 
         let focus = format!("Focus: {:>12}", TARGETS[self.focus]);
         output.push(focus);
