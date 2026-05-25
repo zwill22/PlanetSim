@@ -1,5 +1,5 @@
-use graphics::{Context, Text, Transformed};
 use graphics::types::FontSize;
+use graphics::{Context, Text, Transformed};
 use opengl_graphics::{GlGraphics, GlyphCache};
 
 pub(crate) fn render_text(
@@ -9,7 +9,7 @@ pub(crate) fn render_text(
     g: &mut GlGraphics,
     glyphs: &mut GlyphCache,
     colour: [f32; 4],
-    font_size: f64
+    font_size: f64,
 ) {
     let text = Text::new_color(colour, font_size as FontSize).round();
 

@@ -75,7 +75,7 @@ const COLOURS: [(&str, &str); 51] = [
     ("Xiangliu", "5e9ee0"),
     // Eris
     ("Eris", "babac6"),
-    ("Dysnomia", "5b5a56")
+    ("Dysnomia", "5b5a56"),
 ];
 
 fn colour(body: Option<&str>) -> [f32; 4] {

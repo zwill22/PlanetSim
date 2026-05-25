@@ -32,7 +32,7 @@ fn control_list() -> Vec<String> {
         "Toggle orbits          [o]",
         "Reset settings      [r]",
         "Toggle controls    [c]",
-        "Toggle names       [n]"
+        "Toggle names       [n]",
     ];
 
     strings.iter().map(|s| s.to_string()).collect()
@@ -244,7 +244,7 @@ impl Settings {
             Key::C => self.toggle_controls(),              // `c` Toggle list of controls
             Key::Left => self.previous_target(),           // `<-` Focus on previous target
             Key::Right => self.next_target(),              // '->` Focus on next target
-            Key::N => self.toggle_names(),                          // `n` Toggle names
+            Key::N => self.toggle_names(),                 // `n` Toggle names
             _ => {}
         }
     }
