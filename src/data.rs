@@ -3,6 +3,7 @@ use crate::body::Body;
 use crate::settings::Settings;
 use polars::prelude::*;
 use std::collections::HashMap;
+use std::io::Cursor;
 
 fn family() -> Expr {
     let f = col("family");
@@ -81,9 +82,10 @@ fn prograde() -> Expr {
 }
 
 fn dynamic_data() -> LazyFrame {
-    let lf = LazyCsvReader::new(PlRefPath::new("data/dynamic.csv"))
-        .finish()
-        .unwrap();
+    const DYNAMIC: &[u8] = include_bytes!("../data/dynamic.csv");
+    let cursor = Cursor::new(DYNAMIC);
+
+    let lf = CsvReader::new(cursor).finish().unwrap().lazy();
 
     lf.with_columns([semi_major(), eccentricity(), period()])
         .select([
@@ -104,9 +106,10 @@ fn dynamic_data() -> LazyFrame {
 }
 
 fn physical_data() -> LazyFrame {
-    let lf = LazyCsvReader::new(PlRefPath::new("data/physical.csv"))
-        .finish()
-        .unwrap();
+    const PHYSICAL: &[u8] = include_bytes!("../data/physical.csv");
+    let cursor = Cursor::new(PHYSICAL);
+
+    let lf = CsvReader::new(cursor).finish().unwrap().lazy();
 
     lf.select([
         col("name"),

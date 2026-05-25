@@ -36,9 +36,9 @@ const EXIT_ON_ESCAPE: bool = true;
 // **********************************
 
 fn setup_glyphs<'a>() -> GlyphCache<'a> {
-    let font_data: &[u8] = include_bytes!("../data/Michroma-Regular.ttf");
+    const FONT_DATA: &[u8] = include_bytes!("../data/Michroma-Regular.ttf");
 
-    let font: Font<'static> = Font::try_from_bytes(font_data).unwrap();
+    let font: Font<'static> = Font::try_from_bytes(FONT_DATA).unwrap();
     GlyphCache::from_font(font, (), TextureSettings::new())
 }
 
@@ -84,8 +84,8 @@ impl App<'_> {
         self.settings
             .render(&context, &mut self.gl, &mut self.glyphs);
 
-        self.bodies.render(&context, &mut self.gl, &mut self.glyphs, x0, y0);
-        
+        self.bodies
+            .render(&context, &mut self.gl, &mut self.glyphs, x0, y0);
 
         self.gl.draw_end();
     }
