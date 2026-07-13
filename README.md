@@ -34,11 +34,12 @@ Limitations:
 - Bodies are all represented by a single colour circle
 
 ![Pluto](screenshots/pluto.png)
-*Pluto view showing some of the limitations of the simulation. Pluto is fixed and Charon orbits the centre of Pluto*
+*Pluto view showing some of the limitations of the simulation. Pluto is fixed, and Charon orbits the centre of Pluto*
 
 ### Data
 
-The simulation uses data on the averaged motion of the planets taken from [Johnston's Archive](https://www.johnstonsarchive.net/astro/index.html). For more information [see here](https://github.com/zwill22/planetsim/blob/main/data/README.md).
+The simulation uses data on the averaged motion of the planets taken from [Johnston's Archive](https://www.johnstonsarchive.net/astro/index.html). 
+For more information, [see here](https://github.com/zwill22/planetsim/blob/main/data/README.md).
 
 [//]: # (Links)
 [rust]: https://www.rust-lang.org
@@ -48,8 +49,8 @@ The simulation uses data on the averaged motion of the planets taken from [Johns
 [license]: https://github.com/zwill22/planetsim/blob/main/LICENSE
 
 [//]: # (Badges)
-[rust-badge]: https://img.shields.io/badge/Rust-%23000000.svg?e&logo=rust&logoColor=white
-[github-badge]: https://img.shields.io/badge/GitHub-%23121011.svg?logo=github&logoColor=white
-[rust-test-badge]: https://github.com/zwill22/planetsim/actions/workflows/rust.yml/badge.svg
-[buy-me-coffee]: https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?logo=buy-me-a-coffee&logoColor=black
-[license-badge]: https://img.shields.io/github/license/zwill22/xmlgenerator
+[rust-badge]: https://img.shields.io/badge/Rust-%23000000.svg?e&logo=rust&logoColor=white&style=for-the-badge
+[github-badge]: https://img.shields.io/badge/GitHub-%23121011.svg?logo=github&logoColor=white&style=for-the-badge
+[rust-test-badge]: https://img.shields.io/github/actions/workflow/status/zwill22/planetsim/rust.yml?style=for-the-badge&logo=github
+[buy-me-coffee]: https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?logo=buy-me-a-coffee&logoColor=black&style=for-the-badge
+[license-badge]: https://img.shields.io/github/license/zwill22/xmlgenerator?style=for-the-badge
